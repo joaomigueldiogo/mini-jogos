@@ -1,0 +1,2678 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#7c3aed">
+<title>Fidget Tycoon</title>
+<style>
+  :root{
+    --bg1:#f5d0fe;
+    --bg2:#c4b5fd;
+    --bg3:#a5f3fc;
+    --card:#ffffff;
+    --ink:#3b2a52;
+    --muted:#8b7ba8;
+    --gold:#ffb703;
+    --green:#22c55e;
+    --red:#f43f5e;
+    --common:#60a5fa;
+    --rare:#a78bfa;
+    --epic:#f472b6;
+    --legendary:#fbbf24;
+    --mythic:linear-gradient(90deg,#f472b6,#facc15,#38bdf8);
+    --secret:linear-gradient(90deg,#1e293b,#f59e0b,#1e293b);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(160deg,var(--bg1),var(--bg2) 50%,var(--bg3));
+    background-attachment:fixed;
+    color:var(--ink);
+    overscroll-behavior:none;
+  }
+  #app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding:env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 12px);
+    position:relative;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 16px;
+    margin-top:8px;
+    background:rgba(255,255,255,0.75);
+    backdrop-filter:blur(6px);
+    border-radius:20px;
+    box-shadow:0 6px 18px rgba(80,40,120,0.12);
+  }
+  h1{
+    font-size:20px;
+    margin:0;
+    font-weight:800;
+    letter-spacing:-0.3px;
+  }
+  .coins{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+  }
+  .coins .amount{
+    font-size:22px;
+    font-weight:800;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .coins .rate{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .coin-icon{
+    width:22px;height:22px;
+    display:inline-block;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff6d9, var(--gold) 60%, #c98a00 100%);
+    box-shadow:inset 0 -2px 3px rgba(0,0,0,0.25);
+  }
+  section.box-area{
+    margin-top:16px;
+    background:rgba(255,255,255,0.55);
+    border-radius:24px;
+    padding:18px;
+    text-align:center;
+    min-height:230px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .box-title{
+    font-size:14px;
+    font-weight:700;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-bottom:10px;
+  }
+  #openBoxBtn{
+    background:linear-gradient(145deg,#a78bfa,#7c3aed);
+    color:#fff;
+    border:none;
+    border-radius:20px;
+    padding:22px 30px;
+    font-size:18px;
+    font-weight:800;
+    box-shadow:0 8px 0 #5b21b6, 0 10px 20px rgba(91,33,182,0.35);
+    cursor:pointer;
+    transition:transform .08s;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  #openBoxBtn:active{
+    transform:translateY(6px);
+    box-shadow:0 2px 0 #5b21b6, 0 4px 10px rgba(91,33,182,0.35);
+  }
+  .box-glyph{ font-size:26px; }
+
+  .reveal-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    animation:pop .35s ease;
+  }
+  @keyframes pop{
+    0%{transform:scale(0.4) rotate(-8deg); opacity:0;}
+    70%{transform:scale(1.08) rotate(2deg); opacity:1;}
+    100%{transform:scale(1) rotate(0);}
+  }
+  .rarity-tag{
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    padding:3px 10px;
+    border-radius:999px;
+    color:#fff;
+  }
+  .reveal-img{
+    width:110px; height:110px;
+    filter:drop-shadow(0 8px 10px rgba(0,0,0,0.15));
+    transform-origin:center center;
+  }
+  /* Cada fidget toy anima-se com o seu movimento característico quando aparece na caixa */
+  @keyframes animPress{
+    0%,100%{ transform:scale(1); }
+    50%{ transform:scale(0.82); }
+  }
+  @keyframes animSpin{
+    0%{ transform:rotate(0deg); }
+    100%{ transform:rotate(360deg); }
+  }
+  @keyframes animWiggle{
+    0%,100%{ transform:rotate(-10deg); }
+    50%{ transform:rotate(10deg); }
+  }
+  @keyframes animBounce{
+    0%,100%{ transform:translateY(0) scale(1); }
+    50%{ transform:translateY(-10px) scale(1.05); }
+  }
+  @keyframes animSquish{
+    0%,100%{ transform:scale(1,1); }
+    30%{ transform:scale(1.18,0.82); }
+    60%{ transform:scale(0.88,1.14); }
+  }
+  .anim-press{ animation:animPress 0.8s ease-in-out infinite; }
+  .anim-spin{ animation:animSpin 1.6s linear infinite; }
+  .anim-wiggle{ animation:animWiggle 1.2s ease-in-out infinite; }
+  .anim-bounce{ animation:animBounce 1s ease-in-out infinite; }
+  .anim-squish{ animation:animSquish 1.1s ease-in-out infinite; }
+  .reveal-name{ font-size:18px; font-weight:800; }
+  .reveal-price{
+    font-size:15px;
+    font-weight:700;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .reveal-stats{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .reveal-actions{
+    display:flex;
+    gap:12px;
+    margin-top:10px;
+  }
+  .btn{
+    border:none;
+    border-radius:16px;
+    padding:12px 20px;
+    font-weight:800;
+    font-size:14px;
+    cursor:pointer;
+    transition:transform .08s;
+  }
+  .btn:active{ transform:scale(0.94); }
+  .btn-buy{
+    background:linear-gradient(145deg,#4ade80,#16a34a);
+    color:#fff;
+    box-shadow:0 5px 0 #14532d;
+  }
+  .btn-buy:disabled{
+    background:#cbd5e1;
+    box-shadow:0 5px 0 #94a3b8;
+    color:#64748b;
+    cursor:not-allowed;
+  }
+  .btn-trash{
+    background:linear-gradient(145deg,#fb7185,#e11d48);
+    color:#fff;
+    box-shadow:0 5px 0 #881337;
+  }
+  .shake{ animation:shake .3s; }
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+
+  .collection-title{
+    margin:18px 4px 8px;
+    font-size:14px;
+    font-weight:800;
+    color:var(--ink);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .collection-title span.hint{
+    font-size:11px;
+    color:var(--muted);
+    font-weight:600;
+  }
+  #collection{
+    padding-bottom:16px;
+  }
+  .toy-card{
+    background:var(--card);
+    border-radius:18px;
+    padding:10px 6px 8px;
+    text-align:center;
+    box-shadow:0 4px 10px rgba(80,40,120,0.10);
+    position:relative;
+    cursor:pointer;
+    transition:transform .06s;
+  }
+  .toy-card:active{ transform:scale(0.93); }
+  .toy-card.locked{
+    opacity:0.35;
+    cursor:default;
+  }
+  .toy-card img, .toy-card svg{
+    width:56px; height:56px;
+  }
+  .toy-count{
+    position:absolute;
+    top:4px; right:6px;
+    background:var(--ink);
+    color:#fff;
+    font-size:10px;
+    font-weight:800;
+    padding:2px 6px;
+    border-radius:999px;
+  }
+  .toy-name{
+    font-size:11px;
+    font-weight:800;
+    margin-top:4px;
+  }
+  .toy-tap{
+    font-size:10px;
+    color:var(--muted);
+    font-weight:700;
+  }
+  footer{
+    margin-top:auto;
+    display:flex;
+    gap:8px;
+    padding-top:10px;
+  }
+  footer button{
+    flex:1;
+    background:rgba(255,255,255,0.7);
+    border:none;
+    border-radius:14px;
+    padding:10px;
+    font-size:12px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .float-num{
+    position:absolute;
+    font-weight:800;
+    color:var(--green);
+    font-size:16px;
+    pointer-events:none;
+    animation:float 0.8s ease-out forwards;
+    z-index:50;
+  }
+  @keyframes float{
+    0%{ transform:translateY(0); opacity:1; }
+    100%{ transform:translateY(-45px); opacity:0; }
+  }
+  dialog{
+    border:none;
+    border-radius:20px;
+    padding:0;
+    width:88%;
+    max-width:380px;
+  }
+  dialog::backdrop{ background:rgba(30,15,50,0.55); }
+  .dialog-inner{ padding:18px; }
+  .dialog-inner h3{ margin:0 0 10px; font-size:16px; }
+  .dialog-inner textarea{
+    width:100%;
+    height:70px;
+    border-radius:10px;
+    border:1px solid #ddd;
+    padding:8px;
+    font-size:12px;
+    font-family:monospace;
+    resize:none;
+  }
+  .dialog-actions{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+  }
+  .dialog-actions button{
+    flex:1;
+    padding:10px;
+    border:none;
+    border-radius:10px;
+    font-weight:700;
+    background:#e9e5ff;
+  }
+  .dialog-actions button.primary{
+    background:linear-gradient(145deg,#a78bfa,#7c3aed);
+    color:#fff;
+  }
+  .level-bar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:10px;
+    background:rgba(255,255,255,0.7);
+    border-radius:16px;
+    padding:8px 12px;
+  }
+  .level-badge{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    font-weight:800;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .level-dots{
+    display:flex;
+    gap:4px;
+    flex-wrap:wrap;
+    flex:1;
+    justify-content:flex-end;
+  }
+  .level-dot{
+    width:20px; height:20px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:10px;
+    font-weight:800;
+    background:#e2e8f0;
+    color:#94a3b8;
+    flex-shrink:0;
+  }
+  .level-dot.done{
+    background:linear-gradient(145deg,#4ade80,#16a34a);
+    color:#fff;
+  }
+  .level-dot.active{
+    background:linear-gradient(145deg,#a78bfa,#7c3aed);
+    color:#fff;
+    animation:levelDotPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes levelDotPulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(124,58,237,0.5); }
+    50%{ box-shadow:0 0 0 5px rgba(124,58,237,0); }
+  }
+  .level-section{ margin-bottom:6px; }
+  .level-section-header{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:14px 4px 8px;
+    font-size:13px;
+    font-weight:800;
+    color:var(--ink);
+  }
+  .level-section.locked-section .level-section-header{ color:var(--muted); opacity:0.6; }
+  .level-section.current .level-section-header{ color:#7c3aed; }
+  .level-section-icon{ font-size:18px; }
+  .level-section-tag{
+    margin-left:auto;
+    background:linear-gradient(145deg,#a78bfa,#7c3aed);
+    color:#fff;
+    font-size:10px;
+    font-weight:800;
+    padding:2px 8px;
+    border-radius:999px;
+  }
+  .level-toys-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:4px;
+  }
+
+  /* ---------- Galaxy map (planet-per-level navigation) ---------- */
+  .galaxy-track{
+    position:relative;
+    background:radial-gradient(ellipse at 20% 0%, #2e1065 0%, #1e0a38 45%, #120726 100%);
+    border-radius:22px;
+    padding:26px 14px 30px;
+    overflow:hidden;
+    box-shadow:inset 0 0 30px rgba(0,0,0,0.4);
+  }
+  .galaxy-track::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 15% 12%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 82% 8%, #fff, transparent),
+      radial-gradient(1px 1px at 40% 22%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 65% 35%, #fff, transparent),
+      radial-gradient(1px 1px at 12% 48%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 90% 55%, #fff, transparent),
+      radial-gradient(1px 1px at 30% 65%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 75% 78%, #fff, transparent),
+      radial-gradient(1px 1px at 20% 88%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 55% 95%, #fff, transparent);
+    opacity:0.55;
+    pointer-events:none;
+  }
+  .planet-stop{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    width:230px;
+    margin:0 auto 40px;
+    z-index:1;
+  }
+  .planet-stop:nth-child(4n+2){ margin-right:auto; margin-left:2%; align-items:flex-start; }
+  .planet-stop:nth-child(4n+3){ margin-left:auto; margin-right:2%; align-items:flex-end; }
+  .planet-stop:nth-child(4n){ margin:0 auto 40px; }
+  .planet-stop::after{
+    content:'';
+    position:absolute;
+    left:50%; top:100%;
+    width:2px; height:40px;
+    transform:translateX(-50%);
+    background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.4) 0 5px, transparent 5px 11px);
+  }
+  .planet-stop:last-child::after{ display:none; }
+  .planet-node{
+    position:relative;
+    width:128px; height:128px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:48px;
+    cursor:pointer;
+    box-shadow:0 0 0 5px rgba(255,255,255,0.08), 0 8px 18px rgba(0,0,0,0.4);
+    transition:transform .15s;
+  }
+  .planet-node:active{ transform:scale(0.96); }
+  .planet-node.locked{ filter:grayscale(0.85) brightness(0.55); cursor:pointer; }
+  .planet-node.current{ animation:planetPulse 1.6s ease-in-out infinite; }
+  @keyframes planetPulse{
+    0%,100%{ box-shadow:0 0 0 5px rgba(255,255,255,0.12), 0 0 22px 5px rgba(253,230,138,0.55), 0 8px 18px rgba(0,0,0,0.4); }
+    50%{ box-shadow:0 0 0 9px rgba(255,255,255,0.05), 0 0 36px 12px rgba(253,230,138,0.75), 0 8px 18px rgba(0,0,0,0.4); }
+  }
+  .planet-node .planet-ring{
+    position:absolute;
+    width:112% ; height:24%;
+    border:3px solid rgba(255,255,255,0.5);
+    border-radius:50%;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%) rotate(-18deg);
+    pointer-events:none;
+  }
+  .planet-lock-badge{
+    position:absolute; bottom:2px; right:2px;
+    background:#1e0a38;
+    border-radius:50%;
+    width:32px; height:32px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+    border:2px solid rgba(255,255,255,0.3);
+  }
+  .planet-done-badge{
+    position:absolute; bottom:2px; right:2px;
+    background:#22c55e;
+    color:#052e12;
+    border-radius:50%;
+    width:32px; height:32px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+    font-weight:900;
+    border:2px solid #1e0a38;
+  }
+  .planet-label{
+    margin-top:6px;
+    font-size:11px;
+    font-weight:800;
+    color:#e9d5ff;
+    text-align:center;
+    line-height:1.3;
+  }
+  .planet-label .planet-num{
+    display:block;
+    font-size:10px;
+    color:#c4b5fd;
+    letter-spacing:1px;
+  }
+  .parked-ship{
+    position:absolute;
+    top:-42px; left:50%;
+    transform:translateX(-50%);
+    width:46px; height:46px;
+    z-index:2;
+    animation:shipHover 1.8s ease-in-out infinite;
+  }
+  @keyframes shipHover{
+    0%,100%{ transform:translateX(-50%) translateY(0) rotate(-6deg); }
+    50%{ transform:translateX(-50%) translateY(-6px) rotate(6deg); }
+  }
+  .ship-body{
+    width:100%; height:100%;
+    border-radius:50%;
+    overflow:hidden;
+    background:#fff;
+    box-shadow:0 0 10px 3px rgba(255,255,255,0.65);
+    border:2px solid #fff;
+  }
+  .ship-body svg{ width:100%; height:100%; display:block; }
+  .ship-flame{
+    position:absolute;
+    left:50%; top:96%;
+    transform:translateX(-50%);
+    width:9px; height:16px;
+    background:linear-gradient(to bottom, #fbbf24, rgba(251,191,36,0));
+    border-radius:0 0 8px 8px;
+    animation:flameFlicker .18s ease-in-out infinite alternate;
+  }
+  @keyframes flameFlicker{
+    0%{ opacity:0.6; height:12px; }
+    100%{ opacity:1; height:18px; }
+  }
+  .flying-ship{
+    position:fixed;
+    width:52px; height:52px;
+    z-index:250;
+    pointer-events:none;
+    transition:transform 1.2s cubic-bezier(.42,0,.32,1);
+    transform:translate(0,0) rotate(0deg);
+  }
+  .flying-ship.flying{ transform:translate(var(--dx), var(--dy)) rotate(var(--rot));  }
+
+  /* The 3 fidget toys of each planet, docked right onto it — tap them directly,
+     no need to open anything first. */
+  .planet-moons{
+    display:flex;
+    gap:8px;
+    margin-top:-18px;
+    background:rgba(20,10,40,0.55);
+    backdrop-filter:blur(1px);
+    padding:10px 10px 8px;
+    border-radius:22px;
+    position:relative;
+    z-index:2;
+    box-shadow:0 6px 14px rgba(0,0,0,0.35);
+  }
+  .planet-stop.future .planet-moons{ opacity:0.55; }
+  .moon-card{
+    width:62px;
+    background:var(--card);
+    border-radius:16px;
+    padding:8px 4px 6px;
+    text-align:center;
+    box-shadow:0 3px 8px rgba(80,40,120,0.25);
+    position:relative;
+    cursor:pointer;
+    transition:transform .06s;
+  }
+  .moon-card:active{ transform:scale(0.93); }
+  .moon-card.locked{ opacity:0.45; cursor:default; }
+  .moon-card svg{ width:36px; height:36px; }
+  .moon-count{
+    position:absolute;
+    top:2px; right:3px;
+    background:var(--ink);
+    color:#fff;
+    font-size:8px;
+    font-weight:800;
+    padding:1px 5px;
+    border-radius:999px;
+  }
+  .moon-name{
+    font-size:8px;
+    font-weight:800;
+    margin-top:2px;
+    line-height:1.2;
+    min-height:19px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .moon-tap{
+    font-size:8px;
+    font-weight:700;
+    color:var(--muted);
+  }
+  .moon-card .tap-badge{ font-size:8px; padding:1px 6px; }
+
+  .levelup-overlay{
+    position:fixed; inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:200;
+    background:rgba(30,15,50,0.55);
+  }
+  .levelup-overlay.show{ display:flex; }
+  .levelup-card{
+    background:linear-gradient(160deg,#ffffff,#f5f0ff);
+    border-radius:26px;
+    padding:32px 26px;
+    text-align:center;
+    box-shadow:0 20px 50px rgba(80,40,120,0.4);
+    animation:levelupPop .5s cubic-bezier(.34,1.56,.64,1);
+    position:relative;
+    z-index:2;
+    max-width:300px;
+  }
+  @keyframes levelupPop{
+    0%{ transform:scale(0.5) rotate(-6deg); opacity:0; }
+    60%{ transform:scale(1.08) rotate(2deg); opacity:1; }
+    100%{ transform:scale(1) rotate(0); }
+  }
+  .levelup-badge{ font-size:54px; margin-bottom:8px; animation:levelupBounce 0.8s ease-in-out infinite; }
+  @keyframes levelupBounce{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-10px); }
+  }
+  .levelup-title{ font-size:20px; font-weight:900; color:var(--ink); margin-bottom:6px; }
+  .levelup-subtitle{ font-size:14px; font-weight:700; color:var(--muted); }
+  .levelup-confetti{ position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+  .confetti-piece{
+    position:absolute;
+    top:-20px;
+    animation:confettiFall linear forwards;
+  }
+  @keyframes confettiFall{
+    0%{ transform:translateY(0) rotate(0deg); opacity:1; }
+    100%{ transform:translateY(110vh) rotate(360deg); opacity:0.2; }
+  }
+  .audio-bar{
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+    margin-top:8px;
+  }
+  .audio-btn{
+    border:none;
+    border-radius:999px;
+    padding:6px 12px;
+    font-size:11px;
+    font-weight:800;
+    background:rgba(255,255,255,0.65);
+    color:var(--muted);
+    transition:transform .08s;
+  }
+  .audio-btn:active{ transform:scale(0.92); }
+  .audio-btn.active{
+    background:linear-gradient(145deg,#a78bfa,#7c3aed);
+    color:#fff;
+  }
+  .tip-banner{
+    margin-top:10px;
+    background:linear-gradient(145deg,#fef9c3,#fde68a);
+    border:2px dashed #ca8a04;
+    border-radius:16px;
+    padding:10px 14px;
+    font-size:13px;
+    font-weight:700;
+    color:#78350f;
+    text-align:center;
+    line-height:1.4;
+  }
+  @keyframes pulseCard{
+    0%,100%{ box-shadow:0 4px 10px rgba(80,40,120,0.10); transform:scale(1); }
+    50%{ box-shadow:0 0 0 6px rgba(124,58,237,0.35), 0 4px 10px rgba(80,40,120,0.10); transform:scale(1.04); }
+  }
+  .toy-card.pulse-hint{ animation:pulseCard 1.1s ease-in-out infinite; }
+  .tap-badge{
+    position:absolute;
+    bottom:-6px; left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:#fff;
+    font-size:9px;
+    font-weight:800;
+    padding:2px 8px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  #minigameDialog{
+    border:none;
+    border-radius:22px;
+    padding:0;
+    width:92%;
+    max-width:400px;
+  }
+  #minigameDialog::backdrop{ background:rgba(20,10,40,0.65); }
+  .mg-inner{ padding:18px; }
+  .mg-header{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .mg-icon{ font-size:32px; }
+  .mg-level{ font-size:11px; font-weight:800; color:var(--muted); letter-spacing:1px; }
+  .mg-title{ font-size:16px; font-weight:800; }
+  .mg-skip{
+    margin-left:auto;
+    background:none;
+    border:none;
+    font-size:11px;
+    font-weight:700;
+    color:var(--muted);
+    text-decoration:underline;
+    padding:4px;
+  }
+  .mg-instructions{ font-size:13px; color:var(--muted); margin:8px 0; text-align:center; }
+  .mg-progress{ text-align:center; font-size:12px; font-weight:800; color:var(--ink); margin-bottom:10px; }
+  .mg-action-btn{ width:100%; margin-top:14px; }
+  .timing-track{
+    position:relative;
+    height:36px;
+    background:#e2e8f0;
+    border-radius:999px;
+    overflow:hidden;
+    margin:10px 0;
+  }
+  .timing-zone{
+    position:absolute;
+    top:0; bottom:0;
+    background:#86efac;
+  }
+  .timing-marker{
+    position:absolute;
+    top:2px; bottom:2px;
+    width:10px;
+    border-radius:999px;
+    background:#7c3aed;
+    transform:translateX(-50%);
+  }
+  .mg-flash-good{ animation:mgFlashGood 0.25s; }
+  .mg-flash-bad{ animation:mgFlashBad 0.25s; }
+  @keyframes mgFlashGood{ 0%{ box-shadow:0 0 0 6px rgba(34,197,94,0.5);} 100%{ box-shadow:0 0 0 0 rgba(34,197,94,0); } }
+  @keyframes mgFlashBad{ 0%{ box-shadow:0 0 0 6px rgba(244,63,94,0.5);} 100%{ box-shadow:0 0 0 0 rgba(244,63,94,0); } }
+  .reaction-grid{
+    display:grid;
+    gap:10px;
+    margin:10px 0;
+  }
+  .reaction-cell{
+    aspect-ratio:1;
+    background:#e2e8f0;
+    border-radius:14px;
+    transition:background .1s;
+  }
+  .reaction-cell.lit{ background:#facc15; }
+  .reaction-cell.hit{ background:#4ade80; }
+  .reaction-cell.miss{ background:#f87171; }
+  .reaction-cell.early{ background:#94a3b8; animation:earlyShake .22s ease; }
+  @keyframes earlyShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-4px); } 75%{ transform:translateX(4px); } }
+  .mg-result{ text-align:center; padding:10px 0; }
+  .mg-stars{ font-size:34px; margin-bottom:8px; }
+  .mg-score{ font-size:14px; font-weight:700; color:var(--muted); margin-bottom:4px; }
+  .mg-reward{ font-size:20px; font-weight:800; color:var(--ink); display:flex; align-items:center; justify-content:center; gap:6px; }
+  .toast{
+    position:fixed;
+    bottom:20px; left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:700;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s;
+    z-index:100;
+  }
+  .toast.show{ opacity:1; }
+
+  /* ---------- Loja (Shop) ---------- */
+  .shop-bar{ text-align:center; margin:6px 0 2px; }
+  .shop-open-btn{
+    background:linear-gradient(145deg,#fbbf24,#f59e0b);
+    color:#7c2d12;
+    border:none;
+    border-radius:999px;
+    padding:10px 22px;
+    font-size:14px;
+    font-weight:800;
+    box-shadow:0 4px 12px rgba(245,158,11,0.5);
+    animation:shopPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes shopPulse{
+    0%,100%{ transform:scale(1); }
+    50%{ transform:scale(1.06); }
+  }
+  #shopDialog, #cartDialog{
+    border:none;
+    border-radius:22px;
+    padding:0;
+    width:94%;
+    max-width:440px;
+    max-height:82vh;
+  }
+  #shopDialog::backdrop, #cartDialog::backdrop{ background:rgba(20,10,40,0.7); }
+  .shop-inner{ padding:16px; display:flex; flex-direction:column; max-height:82vh; }
+  .shop-header{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .shop-title{ font-size:16px; font-weight:800; }
+  .shop-subtitle{ font-size:11px; color:var(--muted); font-weight:700; }
+  .cart-btn{
+    margin-left:auto;
+    position:relative;
+    background:#f1e9fb;
+    border:none;
+    border-radius:12px;
+    font-size:20px;
+    padding:6px 10px;
+  }
+  .cart-badge{
+    position:absolute;
+    top:-6px; right:-6px;
+    background:#ef4444;
+    color:#fff;
+    font-size:10px;
+    font-weight:800;
+    border-radius:999px;
+    padding:1px 6px;
+    animation:cartBounce .3s ease;
+  }
+  @keyframes cartBounce{ 0%{ transform:scale(0.4); } 60%{ transform:scale(1.3); } 100%{ transform:scale(1); } }
+  .shop-body{ overflow-y:auto; flex:1; }
+  .shop-aisle{ margin-bottom:16px; }
+  .shop-aisle-header{
+    font-size:12px;
+    font-weight:800;
+    color:#7c2d12;
+    background:linear-gradient(145deg,#fde68a,#fbbf24);
+    display:inline-block;
+    padding:4px 12px;
+    border-radius:999px;
+    margin-bottom:8px;
+  }
+  .shop-row{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+  .shop-item-card{
+    flex:0 0 auto;
+    width:112px;
+    background:linear-gradient(160deg,#faf5ff,#f1e9fb);
+    border:2px solid #e4d4fb;
+    border-radius:16px;
+    padding:10px 8px;
+    text-align:center;
+    transition:transform .15s;
+  }
+  .shop-item-card.added{ animation:shopItemAdded .35s ease; }
+  @keyframes shopItemAdded{ 0%{ transform:scale(1); } 40%{ transform:scale(0.88) rotate(-4deg); } 100%{ transform:scale(1); } }
+  .shop-item-icon{ font-size:34px; margin-bottom:4px; }
+  .shop-item-name{ font-size:11px; font-weight:800; line-height:1.25; min-height:28px; }
+  .shop-item-price{ font-size:11px; font-weight:700; color:#a16207; margin:4px 0 6px; display:flex; align-items:center; justify-content:center; gap:3px; }
+  .shop-item-owned{ font-size:9px; color:var(--muted); font-weight:700; margin-bottom:4px; }
+  .shop-add-btn{
+    width:100%;
+    background:linear-gradient(145deg,#a78bfa,#8b5cf6);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:6px 0;
+    font-size:11px;
+    font-weight:800;
+  }
+  .shop-add-btn:disabled{ background:#cbd5e1; color:#64748b; }
+  .cart-body{ overflow-y:auto; flex:1; min-height:80px; }
+  .cart-empty{ text-align:center; color:var(--muted); font-size:13px; font-weight:700; padding:30px 0; }
+  .cart-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 0;
+    border-bottom:1px solid #ece3f9;
+  }
+  .cart-row-icon{ font-size:26px; }
+  .cart-row-name{ flex:1; font-size:12px; font-weight:800; }
+  .cart-row-price{ font-size:11px; color:var(--muted); font-weight:700; }
+  .cart-qty{ display:flex; align-items:center; gap:6px; }
+  .cart-qty button{
+    width:24px; height:24px;
+    border:none;
+    border-radius:8px;
+    background:#e4d4fb;
+    font-weight:800;
+    font-size:14px;
+  }
+  .cart-remove{ background:none; border:none; color:#ef4444; font-size:16px; padding:2px 4px; }
+  .cart-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:10px;
+    padding-top:10px;
+    border-top:2px dashed #e4d4fb;
+  }
+  .cart-total{ font-size:14px; font-weight:800; display:flex; align-items:center; gap:4px; }
+  .checkout-btn{
+    background:linear-gradient(145deg,#4ade80,#22c55e);
+    color:#052e12;
+    border:none;
+    border-radius:999px;
+    padding:10px 18px;
+    font-size:13px;
+    font-weight:800;
+    box-shadow:0 4px 10px rgba(34,197,94,0.4);
+  }
+  .checkout-btn:disabled{ background:#cbd5e1; color:#64748b; box-shadow:none; }
+  .checkout-overlay{
+    position:fixed; inset:0;
+    background:rgba(20,10,40,0.75);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:200;
+  }
+  .checkout-overlay.show{ display:flex; }
+  .checkout-card{ text-align:center; }
+  .checkout-bag{ font-size:80px; animation:checkoutBagBounce .6s ease infinite; }
+  @keyframes checkoutBagBounce{
+    0%,100%{ transform:translateY(0) rotate(-8deg); }
+    50%{ transform:translateY(-24px) rotate(8deg); }
+  }
+  .checkout-msg{ color:#fff; font-size:18px; font-weight:800; margin-top:12px; }
+
+  /* ---------- Victory dance ---------- */
+  .victory-overlay{
+    position:fixed; inset:0;
+    background:radial-gradient(circle at 50% 20%, #4c1d95, #1e0a38 70%);
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:26px 16px;
+    z-index:300;
+    overflow-y:auto;
+  }
+  .victory-overlay.show{ display:flex; }
+  .victory-title{
+    font-size:24px;
+    font-weight:900;
+    color:#fde68a;
+    text-align:center;
+    text-shadow:0 0 14px rgba(253,230,138,0.7);
+    margin-bottom:4px;
+  }
+  .victory-subtitle{ color:#e9d5ff; font-size:12px; font-weight:700; text-align:center; margin-bottom:16px; }
+  .victory-stage{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:14px;
+    max-width:480px;
+    margin-bottom:20px;
+  }
+  .dance-toy{
+    width:52px; height:52px;
+    animation-name:danceMove;
+    animation-timing-function:ease-in-out;
+    animation-iteration-count:infinite;
+  }
+  .dance-toy svg{ width:100%; height:100%; display:block; }
+  @keyframes danceMove{
+    0%{ transform:translateY(0) rotate(-10deg); }
+    25%{ transform:translateY(-16px) rotate(8deg); }
+    50%{ transform:translateY(0) rotate(-6deg) scale(1.1); }
+    75%{ transform:translateY(-10px) rotate(10deg); }
+    100%{ transform:translateY(0) rotate(-10deg); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🧸 Fidget<br>Tycoon</h1>
+    <div class="coins">
+      <div class="amount"><span class="coin-icon"></span><span id="coinAmount">100</span></div>
+      <div class="rate" id="coinRate">+0/s</div>
+    </div>
+  </header>
+
+  <div class="level-bar" id="levelBar">
+    <div class="level-badge"><span id="levelIcon">🎡</span> NÍVEL <span id="levelNum">1</span>/10</div>
+    <div class="level-dots" id="levelDots"></div>
+  </div>
+
+  <div class="audio-bar">
+    <button id="sfxToggle" class="audio-btn">🔊 Som</button>
+    <button id="musicToggle" class="audio-btn">🎵 Música</button>
+  </div>
+
+  <div class="shop-bar" id="shopBar" style="display:none;">
+    <button id="openShopBtn" class="shop-open-btn">🏪 Loja</button>
+  </div>
+
+  <div id="tipBanner" class="tip-banner" style="display:none;">
+    <span id="tipText"></span>
+  </div>
+
+  <section class="box-area" id="boxArea"></section>
+
+  <div class="collection-title">
+    <span>🌌 Mapa da Galáxia</span>
+    <span class="hint">👆 toca nos brinquedos</span>
+  </div>
+  <div id="collection"></div>
+
+  <footer>
+    <button id="saveBtn">💾 Guardar código</button>
+    <button id="loadBtn">📥 Carregar código</button>
+  </footer>
+</div>
+
+<dialog id="saveDialog">
+  <div class="dialog-inner">
+    <h3>O teu código de jogo</h3>
+    <p style="font-size:12px;color:#8b7ba8;margin:0 0 8px;">Copia este código e guarda-o algures. Sempre que abrires o jogo de novo, cola-o em "Carregar código" para continuares onde ficaste.</p>
+    <textarea id="saveCode" readonly></textarea>
+    <div class="dialog-actions">
+      <button id="copyBtn">Copiar</button>
+      <button class="primary" id="closeSaveBtn">Fechar</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="loadDialog">
+  <div class="dialog-inner">
+    <h3>Carregar código</h3>
+    <p style="font-size:12px;color:#8b7ba8;margin:0 0 8px;">Cola aqui o código que guardaste anteriormente.</p>
+    <textarea id="loadCode" placeholder="Cola o código aqui..."></textarea>
+    <div class="dialog-actions">
+      <button id="cancelLoadBtn">Cancelar</button>
+      <button class="primary" id="confirmLoadBtn">Carregar</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="minigameDialog">
+  <div class="mg-inner">
+    <div class="mg-header">
+      <span id="mgIcon" class="mg-icon"></span>
+      <div>
+        <div class="mg-level">NÍVEL <span id="mgLevelNum"></span></div>
+        <div class="mg-title" id="mgTitle"></div>
+      </div>
+      <button id="mgSkipBtn" class="mg-skip">Saltar ✕</button>
+    </div>
+    <div id="mgBody" class="mg-body"></div>
+    <div id="mgFooter"></div>
+  </div>
+</dialog>
+
+<dialog id="shopDialog">
+  <div class="shop-inner">
+    <div class="shop-header">
+      <div>
+        <div class="shop-title">🏪 Loja Global de Fidgets</div>
+        <div class="shop-subtitle">Tesouros raros de todo o mundo!</div>
+      </div>
+      <button id="openCartBtn" class="cart-btn">🛒<span id="cartBadge" class="cart-badge" style="display:none;">0</span></button>
+      <button id="closeShopBtn" class="mg-skip">Fechar ✕</button>
+    </div>
+    <div id="shopBody" class="shop-body"></div>
+  </div>
+</dialog>
+
+<dialog id="cartDialog">
+  <div class="shop-inner">
+    <div class="shop-header">
+      <div>
+        <div class="shop-title">🛒 O teu carrinho</div>
+        <div class="shop-subtitle">Confirma a tua compra!</div>
+      </div>
+      <button id="backToShopBtn" class="mg-skip">← Loja</button>
+    </div>
+    <div id="cartBody" class="cart-body"></div>
+    <div class="cart-footer">
+      <div class="cart-total">Total: <span class="coin-icon"></span><span id="cartTotal">0</span></div>
+      <button id="checkoutBtn" class="checkout-btn">Finalizar compra 🎉</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="checkout-overlay" id="checkoutOverlay">
+  <div class="checkout-card">
+    <div class="checkout-bag" id="checkoutBag">🛍️</div>
+    <div class="checkout-msg">Compra confirmada!</div>
+  </div>
+</div>
+
+<div class="victory-overlay" id="victoryOverlay">
+  <div class="levelup-confetti" id="victoryConfetti"></div>
+  <div class="victory-title">🏆 JOGO COMPLETO! 🏆</div>
+  <div class="victory-subtitle">Todos os teus fidget toys estão a festejar contigo!</div>
+  <div class="victory-stage" id="victoryStage"></div>
+  <button id="closeVictoryBtn" class="checkout-btn">Continuar a jogar</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="levelUpOverlay" class="levelup-overlay">
+  <div class="levelup-confetti" id="levelupConfetti"></div>
+  <div class="levelup-card">
+    <div class="levelup-badge" id="levelupBadge">🎉</div>
+    <div class="levelup-title" id="levelupTitle">NÍVEL 1 CONCLUÍDO!</div>
+    <div class="levelup-subtitle" id="levelupSubtitle">A seguir: Nível 2</div>
+  </div>
+</div>
+
+<script>
+/* ---------- Fidget toy definitions ---------- */
+function gridSVG(colors, bg){
+  let cells = '';
+  const n = 4, size = 100, pad = 14, gap = (size - pad*2) / n;
+  for(let r=0;r<n;r++){
+    for(let c=0;c<n;c++){
+      const cx = pad + gap*c + gap/2;
+      const cy = pad + gap*r + gap/2;
+      const color = colors[(r+c) % colors.length];
+      cells += `<circle cx="${cx}" cy="${cy}" r="${gap*0.32}" fill="${color}"/>`;
+    }
+  }
+  return `<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="${bg}"/>${cells}</svg>`;
+}
+
+// Reusable kawaii face (eyes + blush + smile) so every new squishy toy shares the same cute style.
+function kawaiiFace(cx, cy, spread){
+  spread = spread || 9;
+  return `
+      <circle cx="${cx-spread}" cy="${cy}" r="2.6" fill="#78350f"/>
+      <circle cx="${cx+spread}" cy="${cy}" r="2.6" fill="#78350f"/>
+      <path d="M${cx-6} ${cy+7} Q${cx} ${cy+11} ${cx+6} ${cy+7}" stroke="#78350f" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="${cx-spread-6}" cy="${cy+4}" r="3.5" fill="#fca5a5" opacity="0.55"/>
+      <circle cx="${cx+spread+6}" cy="${cy+4}" r="3.5" fill="#fca5a5" opacity="0.55"/>`;
+}
+
+const TOYS = [
+  {
+    id:'popit', name:'Pop-it', rarity:'comum', price:100, tap:10, passive:3, anim:'press',
+    svg: gridSVG(['#ff8fab','#ffc2d1'], '#ffe3ec')
+  },
+  {
+    id:'popit_keychain', name:'Chaveiro Pop-it', rarity:'comum', price:220, tap:18, passive:6, anim:'press',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#e0f2fe"/>
+      <circle cx="50" cy="20" r="8" fill="none" stroke="#38bdf8" stroke-width="4"/>
+      <rect x="28" y="32" width="44" height="44" rx="10" fill="#7dd3fc"/>
+      <circle cx="40" cy="44" r="5" fill="#0ea5e9"/>
+      <circle cx="60" cy="44" r="5" fill="#0ea5e9"/>
+      <circle cx="40" cy="62" r="5" fill="#0ea5e9"/>
+      <circle cx="60" cy="62" r="5" fill="#0ea5e9"/>
+    </svg>`
+  },
+  {
+    id:'spinner', name:'Spinner', rarity:'comum', price:300, tap:25, passive:8, anim:'spin',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#dbeafe"/>
+      <g fill="#3b82f6">
+        <circle cx="50" cy="26" r="12"/>
+        <circle cx="30" cy="66" r="12"/>
+        <circle cx="70" cy="66" r="12"/>
+      </g>
+      <path d="M50 40 L38 58 L62 58 Z" fill="#1d4ed8"/>
+      <circle cx="50" cy="50" r="10" fill="#fff"/>
+      <circle cx="50" cy="50" r="4" fill="#1d4ed8"/>
+    </svg>`
+  },
+  {
+    id:'squeezeball', name:'Bola Squeeze', rarity:'comum', price:480, tap:38, passive:13, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#ede9fe"/>
+      <circle cx="50" cy="52" r="30" fill="#a78bfa"/>
+      <path d="M50 52 m-20,0 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0" fill="none" stroke="#7c3aed" stroke-width="3" stroke-dasharray="6 6"/>
+      <circle cx="42" cy="42" r="4" fill="#c4b5fd" opacity="0.8"/>
+    </svg>`
+  },
+  {
+    id:'band', name:'Pulseira Elástica Fidget', rarity:'comum', price:650, tap:50, passive:18, anim:'wiggle',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fce7f3"/>
+      <ellipse cx="50" cy="55" rx="30" ry="22" fill="none" stroke="#f472b6" stroke-width="6"/>
+      <circle cx="26" cy="48" r="6" fill="#f472b6"/>
+      <circle cx="50" cy="33" r="6" fill="#fb7185"/>
+      <circle cx="74" cy="48" r="6" fill="#f472b6"/>
+      <circle cx="74" cy="66" r="6" fill="#fb7185"/>
+      <circle cx="50" cy="77" r="6" fill="#f472b6"/>
+      <circle cx="26" cy="66" r="6" fill="#fb7185"/>
+    </svg>`
+  },
+  {
+    id:'cube', name:'Fidget Cube', rarity:'raro', price:800, tap:60, passive:20, anim:'press',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#ede9fe"/>
+      <rect x="18" y="18" width="64" height="64" rx="12" fill="#c4b5fd"/>
+      <circle cx="35" cy="35" r="9" fill="#f43f5e"/>
+      <rect x="55" y="26" width="18" height="18" rx="4" fill="#22c55e"/>
+      <circle cx="35" cy="65" r="9" fill="#fbbf24"/>
+      <path d="M56 56 h18 v18 h-18 z" fill="#3b82f6"/>
+      <circle cx="65" cy="65" r="4" fill="#fff"/>
+    </svg>`
+  },
+  {
+    id:'slider', name:'Fidget Slider', rarity:'raro', price:1050, tap:78, passive:27, anim:'press',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#dbeafe"/>
+      <rect x="15" y="46" width="70" height="10" rx="5" fill="#60a5fa"/>
+      <circle cx="35" cy="51" r="10" fill="#2563eb"/>
+      <circle cx="65" cy="51" r="10" fill="#1d4ed8"/>
+      <circle cx="50" cy="51" r="6" fill="#93c5fd"/>
+    </svg>`
+  },
+  {
+    id:'stressball', name:'Bola Anti-stress', rarity:'raro', price:1400, tap:100, passive:35, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#ffedd5"/>
+      <circle cx="50" cy="52" r="30" fill="#fb923c"/>
+      <ellipse cx="38" cy="48" rx="6" ry="9" fill="#ea580c" opacity="0.6"/>
+      <ellipse cx="60" cy="42" rx="5" ry="8" fill="#ea580c" opacity="0.6"/>
+      <ellipse cx="58" cy="62" rx="7" ry="5" fill="#ea580c" opacity="0.6"/>
+      <ellipse cx="40" cy="66" rx="5" ry="6" fill="#ea580c" opacity="0.6"/>
+      <ellipse cx="40" cy="38" rx="7" ry="4" fill="#fed7aa" opacity="0.8"/>
+    </svg>`
+  },
+  {
+    id:'chain', name:'Corrente Fidget', rarity:'raro', price:1800, tap:130, passive:46, anim:'wiggle',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#e2e8f0"/>
+      <g fill="none" stroke="#64748b" stroke-width="6">
+        <ellipse cx="35" cy="40" rx="12" ry="9" transform="rotate(-20 35 40)"/>
+        <ellipse cx="55" cy="48" rx="12" ry="9" transform="rotate(20 55 48)"/>
+        <ellipse cx="40" cy="64" rx="12" ry="9" transform="rotate(-20 40 64)"/>
+        <ellipse cx="62" cy="70" rx="12" ry="9" transform="rotate(20 62 70)"/>
+      </g>
+    </svg>`
+  },
+  {
+    id:'rubik', name:'Cubo Mágico', rarity:'raro', price:2200, tap:160, passive:55, anim:'wiggle',
+    svg: gridSVG(['#ef4444','#22c55e','#facc15','#3b82f6','#f97316','#f8fafc'], '#e2e8f0')
+  },
+  {
+    id:'magnetic', name:'Bolas Magnéticas', rarity:'épico', price:4000, tap:260, passive:90, anim:'bounce',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#f1f5f9"/>
+      <g fill="#94a3b8" stroke="#64748b" stroke-width="1.5">
+        <circle cx="34" cy="40" r="11"/>
+        <circle cx="56" cy="34" r="11"/>
+        <circle cx="70" cy="52" r="11"/>
+        <circle cx="48" cy="58" r="11"/>
+        <circle cx="28" cy="64" r="11"/>
+      </g>
+      <circle cx="30" cy="36" r="3" fill="#e2e8f0"/>
+      <circle cx="52" cy="30" r="3" fill="#e2e8f0"/>
+      <circle cx="66" cy="48" r="3" fill="#e2e8f0"/>
+    </svg>`
+  },
+  {
+    id:'tangle', name:'Tangle', rarity:'épico', price:6000, tap:420, passive:150, anim:'wiggle',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fce7f3"/>
+      <g fill="none" stroke-linecap="round" stroke-width="10">
+        <path d="M20 35 Q50 5 70 35 T50 75" stroke="#c026d3"/>
+        <path d="M30 75 Q10 55 30 35 T70 20" stroke="#2dd4bf"/>
+      </g>
+    </svg>`
+  },
+  {
+    id:'strawberry', name:'Squishy Morango', rarity:'épico', price:9000, tap:600, passive:220, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fee2e2"/>
+      <path d="M50 30 Q75 35 68 65 Q60 85 50 88 Q40 85 32 65 Q25 35 50 30 Z" fill="#f43f5e"/>
+      <path d="M38 28 L50 18 L62 28 L54 26 L50 20 L46 26 Z" fill="#4ade80"/>
+      <circle cx="42" cy="45" r="1.6" fill="#fde68a"/>
+      <circle cx="55" cy="42" r="1.6" fill="#fde68a"/>
+      <circle cx="48" cy="55" r="1.6" fill="#fde68a"/>
+      <circle cx="58" cy="58" r="1.6" fill="#fde68a"/>
+      <circle cx="40" cy="60" r="1.6" fill="#fde68a"/>
+      <circle cx="44" cy="50" r="2.4" fill="#78350f"/>
+      <circle cx="56" cy="50" r="2.4" fill="#78350f"/>
+      <path d="M46 58 Q50 62 54 58" stroke="#78350f" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    id:'bread', name:'Squishy Pão', rarity:'épico', price:12000, tap:800, passive:290, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fef3c7"/>
+      <path d="M22 58 Q22 32 50 30 Q78 32 78 58 L78 68 Q78 76 50 76 Q22 76 22 68 Z" fill="#fde68a"/>
+      <path d="M30 34 Q50 22 70 34" stroke="#f59e0b" stroke-width="3" fill="none" stroke-linecap="round"/>
+      ${kawaiiFace(50,58)}
+    </svg>`
+  },
+  {
+    id:'infinity', name:'Infinity Cube', rarity:'épico', price:16000, tap:1100, passive:400, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#e0f2fe"/>
+      <g fill="#0ea5e9" stroke="#0369a1" stroke-width="2">
+        <rect x="14" y="30" width="34" height="34" rx="5"/>
+        <rect x="52" y="30" width="34" height="34" rx="5"/>
+        <rect x="14" y="68" width="34" height="18" rx="4" opacity="0.7"/>
+        <rect x="52" y="68" width="34" height="18" rx="4" opacity="0.7"/>
+      </g>
+    </svg>`
+  },
+  {
+    id:'donut', name:'Squishy Donut', rarity:'lendário', price:28000, tap:1900, passive:680, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fde2e7"/>
+      <circle cx="50" cy="50" r="28" fill="#fb7185"/>
+      <circle cx="50" cy="50" r="10" fill="#fde2e7"/>
+      <circle cx="36" cy="36" r="2.5" fill="#fff"/>
+      <circle cx="60" cy="32" r="2.5" fill="#a3e635"/>
+      <circle cx="70" cy="48" r="2.5" fill="#38bdf8"/>
+      <circle cx="38" cy="64" r="2.5" fill="#fbbf24"/>
+      <circle cx="41" cy="68" r="2.3" fill="#78350f"/>
+      <circle cx="59" cy="68" r="2.3" fill="#78350f"/>
+      <path d="M45 74 Q50 77 55 74" stroke="#78350f" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    id:'dimple', name:'Simple Dimple', rarity:'lendário', price:45000, tap:3000, passive:1100, anim:'press',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fef9c3"/>
+      <circle cx="35" cy="55" r="22" fill="#fde047"/>
+      <circle cx="65" cy="55" r="22" fill="#fbbf24"/>
+      <circle cx="35" cy="55" r="9" fill="#eab308"/>
+      <circle cx="65" cy="55" r="9" fill="#d97706"/>
+      <rect x="30" y="20" width="40" height="14" rx="7" fill="#fbbf24"/>
+    </svg>`
+  },
+  {
+    id:'icecream', name:'Squishy Gelado', rarity:'lendário', price:60000, tap:4000, passive:1450, anim:'bounce',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fee2e2"/>
+      <path d="M38 56 L62 56 L52 84 Q50 89 48 84 Z" fill="#f59e0b"/>
+      <path d="M35 56 Q35 40 50 40 Q65 40 65 56 Z" fill="#fbcfe8"/>
+      <circle cx="42" cy="46" r="2" fill="#fff"/>
+      <circle cx="58" cy="44" r="2" fill="#fff"/>
+      <circle cx="44" cy="50" r="2.2" fill="#78350f"/>
+      <circle cx="56" cy="50" r="2.2" fill="#78350f"/>
+      <path d="M46 54 Q50 57 54 54" stroke="#78350f" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    id:'dumplings', name:'Dumplings Squishy', rarity:'lendário', price:75000, tap:5000, passive:1800, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fef3c7"/>
+      <path d="M20 62 Q20 40 50 38 Q80 40 80 62 Q80 74 50 74 Q20 74 20 62 Z" fill="#fde68a"/>
+      <path d="M32 40 Q50 30 68 40" stroke="#f59e0b" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M38 36 Q50 28 62 36" stroke="#f59e0b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="40" cy="58" r="2.5" fill="#78350f"/>
+      <circle cx="60" cy="58" r="2.5" fill="#78350f"/>
+      <path d="M44 65 Q50 69 56 65" stroke="#78350f" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="34" cy="62" r="4" fill="#fca5a5" opacity="0.6"/>
+      <circle cx="66" cy="62" r="4" fill="#fca5a5" opacity="0.6"/>
+    </svg>`
+  },
+  {
+    id:'slime', name:'Slime', rarity:'lendário', price:120000, tap:8000, passive:3000, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#dcfce7"/>
+      <path d="M22 40 h56 v30 q0 18 -28 18 q-28 0 -28 -18 z" fill="#4ade80"/>
+      <path d="M22 40 q28 -14 56 0 q-28 10 -56 0 z" fill="#86efac"/>
+      <circle cx="40" cy="30" r="3" fill="#fff"/>
+      <circle cx="60" cy="26" r="2" fill="#fff"/>
+      <circle cx="70" cy="34" r="2.5" fill="#fff"/>
+    </svg>`
+  },
+  {
+    id:'butter', name:'Manteiga Squishy', rarity:'mítico', price:180000, tap:18000, passive:7500, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fffbeb"/>
+      <path d="M18 38 L28 30 L28 70 L18 62 Z" fill="#fcd34d"/>
+      <path d="M82 38 L72 30 L72 70 L82 62 Z" fill="#fcd34d"/>
+      <rect x="26" y="32" width="48" height="36" rx="10" fill="#fbbf24"/>
+      <rect x="26" y="32" width="48" height="14" rx="7" fill="#fde68a"/>
+      <circle cx="36" cy="58" r="4" fill="#fca5a5" opacity="0.6"/>
+      <circle cx="64" cy="58" r="4" fill="#fca5a5" opacity="0.6"/>
+      <circle cx="42" cy="54" r="3" fill="#78350f"/>
+      <circle cx="58" cy="54" r="3" fill="#78350f"/>
+      <path d="M44 61 Q50 66 56 61" stroke="#78350f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="36" cy="40" rx="6" ry="3" fill="#fffbeb" opacity="0.8"/>
+    </svg>`
+  },
+  {
+    id:'cloudslime', name:'Slime Nuvem', rarity:'mítico', price:220000, tap:20000, passive:8200, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#e0f2fe"/>
+      <path d="M30 60 Q20 60 20 50 Q20 40 30 40 Q32 28 46 28 Q56 28 60 36 Q72 34 76 46 Q84 48 82 58 Q82 66 72 66 L34 66 Q28 66 30 60 Z" fill="#bae6fd"/>
+      <circle cx="42" cy="52" r="2.4" fill="#78350f"/>
+      <circle cx="60" cy="50" r="2.4" fill="#78350f"/>
+      <path d="M46 58 Q52 62 58 57" stroke="#78350f" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    id:'queijo', name:'Queijo Squishy', rarity:'mítico', price:260000, tap:26000, passive:11000, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fef9c3"/>
+      <path d="M20 78 L50 18 L80 78 Z" fill="#fbbf24"/>
+      <circle cx="50" cy="58" r="4.5" fill="#fef3c7"/>
+      <circle cx="40" cy="68" r="3.2" fill="#fef3c7"/>
+      <circle cx="61" cy="65" r="3.8" fill="#fef3c7"/>
+      <circle cx="45" cy="52" r="2.6" fill="#78350f"/>
+      <circle cx="58" cy="50" r="2.6" fill="#78350f"/>
+      <path d="M47 59 Q52 64 57 59" stroke="#78350f" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="38" cy="58" r="3.6" fill="#fca5a5" opacity="0.5"/>
+    </svg>`
+  },
+  {
+    id:'panda', name:'Squishy Panda', rarity:'mítico', price:320000, tap:30000, passive:13000, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#f1f5f9"/>
+      <circle cx="50" cy="55" r="28" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+      <circle cx="30" cy="32" r="10" fill="#334155"/>
+      <circle cx="70" cy="32" r="10" fill="#334155"/>
+      <ellipse cx="38" cy="52" rx="8" ry="10" fill="#334155"/>
+      <ellipse cx="62" cy="52" rx="8" ry="10" fill="#334155"/>
+      <circle cx="38" cy="52" r="3" fill="#fff"/>
+      <circle cx="62" cy="52" r="3" fill="#fff"/>
+      <ellipse cx="50" cy="64" rx="5" ry="4" fill="#334155"/>
+    </svg>`
+  },
+  {
+    id:'unicorn', name:'Squishy Unicórnio', rarity:'mítico', price:400000, tap:38000, passive:16500, anim:'bounce',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#f5d0fe"/>
+      <circle cx="50" cy="55" r="26" fill="#fdf4ff"/>
+      <path d="M50 20 L56 34 L44 34 Z" fill="#fbbf24"/>
+      <path d="M32 40 Q26 34 30 26 Q36 30 36 38 Z" fill="#f472b6"/>
+      <path d="M68 40 Q74 34 70 26 Q64 30 64 38 Z" fill="#60a5fa"/>
+      <circle cx="42" cy="55" r="2.6" fill="#78350f"/>
+      <circle cx="58" cy="55" r="2.6" fill="#78350f"/>
+      <circle cx="35" cy="60" r="4" fill="#fca5a5" opacity="0.6"/>
+      <circle cx="65" cy="60" r="4" fill="#fca5a5" opacity="0.6"/>
+    </svg>`
+  },
+  {
+    id:'kineticsand', name:'Bola Kinetic Sand', rarity:'secreto', price:650000, tap:62000, passive:27000, anim:'squish',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fef3c7"/>
+      <circle cx="50" cy="52" r="28" fill="#fbbf24"/>
+      <path d="M22 52 Q50 40 78 52 M22 52 Q50 64 78 52 M50 24 Q40 52 50 80 M50 24 Q60 52 50 80" stroke="#d97706" stroke-width="1.6" fill="none" opacity="0.6"/>
+    </svg>`
+  },
+  {
+    id:'bubblebracelet', name:'Pulseira Bubble Pop', rarity:'secreto', price:900000, tap:85000, passive:37000, anim:'press',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#dcfce7"/>
+      <circle cx="50" cy="52" r="26" fill="none" stroke="#4ade80" stroke-width="10"/>
+      <circle cx="50" cy="26" r="4" fill="#16a34a"/>
+      <circle cx="74" cy="40" r="4" fill="#16a34a"/>
+      <circle cx="74" cy="64" r="4" fill="#16a34a"/>
+      <circle cx="50" cy="78" r="4" fill="#16a34a"/>
+      <circle cx="26" cy="64" r="4" fill="#16a34a"/>
+      <circle cx="26" cy="40" r="4" fill="#16a34a"/>
+    </svg>`
+  },
+  {
+    id:'crystal', name:'Cristal Fidget', rarity:'secreto', price:1300000, tap:125000, passive:54000, anim:'spin',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#ede9fe"/>
+      <path d="M50 18 L74 40 L64 82 L36 82 L26 40 Z" fill="#c4b5fd"/>
+      <path d="M50 18 L64 82 M50 18 L36 82 M26 40 L74 40" stroke="#7c3aed" stroke-width="1.5" opacity="0.6" fill="none"/>
+      <path d="M50 18 L60 36 L50 40 L40 36 Z" fill="#ddd6fe" opacity="0.85"/>
+    </svg>`
+  },
+  {
+    id:'goldenspinner', name:'Fidget Dourado', rarity:'secreto', price:1800000, tap:180000, passive:78000, anim:'spin',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fffbeb"/>
+      <g fill="#f59e0b">
+        <circle cx="50" cy="24" r="13"/>
+        <circle cx="27" cy="68" r="13"/>
+        <circle cx="73" cy="68" r="13"/>
+      </g>
+      <path d="M50 40 L36 62 L64 62 Z" fill="#d97706"/>
+      <circle cx="50" cy="52" r="11" fill="#fde68a"/>
+      <circle cx="50" cy="52" r="4" fill="#d97706"/>
+    </svg>`
+  },
+  {
+    id:'crown', name:'Coroa Squishy', rarity:'secreto', price:2500000, tap:260000, passive:115000, anim:'bounce',
+    svg: `<svg viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="18" fill="#fef9c3"/>
+      <path d="M22 70 L26 40 L42 54 L50 32 L58 54 L74 40 L78 70 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
+      <circle cx="26" cy="40" r="4" fill="#f43f5e"/>
+      <circle cx="50" cy="32" r="4" fill="#38bdf8"/>
+      <circle cx="74" cy="40" r="4" fill="#22c55e"/>
+      <rect x="22" y="70" width="56" height="10" rx="3" fill="#f59e0b"/>
+    </svg>`
+  }
+];
+// Every 3 toys (in ascending price order) form one level, matching the LEVELS array below.
+TOYS.forEach((t, i)=>{ t.level = Math.floor(i/3) + 1; });
+const TOY_MAP = Object.fromEntries(TOYS.map(t=>[t.id,t]));
+const RARITY_COLOR = { 'comum':'var(--common)', 'raro':'var(--rare)', 'épico':'var(--epic)', 'lendário':'var(--legendary)', 'mítico':'var(--mythic)', 'secreto':'var(--secret)' };
+
+// The 30 toys are grouped into 10 levels of 3. Getting the LAST (boss) toy of a level
+// for the first time unlocks a short mini-game themed on that toy, so the game isn't just tapping.
+const LEVELS = [
+  { level:1,  bossId:'spinner',         template:'timing',   title:'Desafio do Spinner',       icon:'🎡' },
+  { level:2,  bossId:'cube',            template:'reaction', title:'Desafio do Fidget Cube',   icon:'🕹️' },
+  { level:3,  bossId:'chain',           template:'memory',   title:'Desafio da Corrente',      icon:'🔗' },
+  { level:4,  bossId:'tangle',          template:'timing',   title:'Desafio do Tangle',        icon:'🌀' },
+  { level:5,  bossId:'infinity',        template:'memory',   title:'Desafio do Infinity Cube', icon:'♾️' },
+  { level:6,  bossId:'icecream',        template:'reaction', title:'Desafio do Gelado',        icon:'🍦' },
+  { level:7,  bossId:'butter',          template:'timing',   title:'Desafio da Manteiga',      icon:'🧈' },
+  { level:8,  bossId:'panda',           template:'memory',   title:'Desafio do Panda',         icon:'🐼' },
+  { level:9,  bossId:'bubblebracelet',  template:'reaction', title:'Desafio da Pulseira',      icon:'🫧' },
+  { level:10, bossId:'crown',           template:'gauntlet', title:'Desafio Final da Coroa',   icon:'👑' },
+];
+const LEVEL_BY_BOSS = Object.fromEntries(LEVELS.map(l=>[l.bossId,l]));
+// One color theme per planet/level, purely decorative for the galaxy map.
+const PLANET_THEMES = [
+  'radial-gradient(circle at 32% 28%, #fca5a5, #b91c1c 70%)',   // 1 rocha vermelha
+  'radial-gradient(circle at 32% 28%, #93c5fd, #1d4ed8 70%)',   // 2 gelo azul
+  'radial-gradient(circle at 32% 28%, #fdba74, #c2410c 70%)',   // 3 lava laranja
+  'radial-gradient(circle at 32% 28%, #d8b4fe, #6d28d9 70%)',   // 4 gigante gasoso roxo
+  'radial-gradient(circle at 32% 28%, #f9a8d4, #be185d 70%)',   // 5 doce cor-de-rosa
+  'radial-gradient(circle at 32% 28%, #86efac, #15803d 70%)',   // 6 floresta verde
+  'radial-gradient(circle at 32% 28%, #fde68a, #b45309 70%)',   // 7 deserto areia
+  'radial-gradient(circle at 32% 28%, #67e8f9, #0e7490 70%)',   // 8 oceano turquesa
+  'radial-gradient(circle at 32% 28%, #c4b5fd, #4c1d95 70%)',   // 9 cristal violeta
+  'radial-gradient(circle at 32% 28%, #fde047, #b45309 70%)',   // 10 coroa dourada
+];
+
+/* ---------- Loja (Shop) ---------- */
+// Unlocked once the player owns the Coroa Squishy (finished all 10 levels).
+// A totally different mechanic from the gacha boxes: browse aisles, add items to
+// a cart, then checkout. These are all-new, imaginative toys from around the world,
+// distinct from the 30 gacha toys, priced as endgame content above the crown.
+const SHOP_ITEMS = [
+  { id:'matryoshka',  name:'Matryoshka Fidget',       icon:'🪆', aisle:'Clássicos do Mundo', price:3500000,  passive:150000  },
+  { id:'abaco',       name:'Ábaco Viajante',          icon:'🧮', aisle:'Clássicos do Mundo', price:4500000,  passive:190000  },
+  { id:'leque',       name:'Leque Samurai Fidget',    icon:'🪭', aisle:'Clássicos do Mundo', price:5800000,  passive:240000  },
+  { id:'peao',        name:'Peão de Xadrez Squishy',  icon:'♟️', aisle:'Clássicos do Mundo', price:7500000,  passive:300000  },
+  { id:'churro',      name:'Churro Squishy',          icon:'🥖', aisle:'Doces do Mundo',     price:9500000,  passive:380000  },
+  { id:'mochi',       name:'Mochi Squishy',           icon:'🍡', aisle:'Doces do Mundo',     price:12000000, passive:480000  },
+  { id:'macaron',     name:'Macaron Fidget',          icon:'🧁', aisle:'Doces do Mundo',     price:15000000, passive:600000  },
+  { id:'algodaodoce', name:'Algodão Doce Squishy',    icon:'🍬', aisle:'Doces do Mundo',     price:19000000, passive:760000  },
+  { id:'planeta',     name:'Planeta Squishy',         icon:'🪐', aisle:'Lendas do Espaço',   price:24000000, passive:950000  },
+  { id:'cometa',      name:'Cometa Fidget',           icon:'☄️', aisle:'Lendas do Espaço',   price:30000000, passive:1200000 },
+  { id:'grifo',       name:'Grifo Squishy Dourado',   icon:'🦁', aisle:'Lendas do Espaço',   price:38000000, passive:1500000 },
+  { id:'estrela',     name:'Estrela Cadente Mágica',  icon:'🌠', aisle:'Lendas do Espaço',   price:48000000, passive:1900000 },
+];
+const SHOP_MAP = Object.fromEntries(SHOP_ITEMS.map(s=>[s.id,s]));
+const SHOP_AISLES = [...new Set(SHOP_ITEMS.map(s=>s.aisle))];
+
+/* ---------- Audio engine (all sounds synthesized — no external files needed) ---------- */
+let audioCtx = null;
+let sfxEnabled = true;
+let musicEnabled = false;
+let musicIndex = 0;
+let musicTimer = null;
+const MUSIC_LOOP = [523,587,659,523,659,784,659,587,523,659,880,784];
+
+function ensureAudio(){
+  if(!audioCtx){
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx) return null;
+    audioCtx = new Ctx();
+  }
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// Low-level: schedules one synthesized note. Never gated by on/off flags itself —
+// callers (sfx*/music) decide whether they're allowed to play.
+function playTone({freq=440, duration=0.15, type='sine', volume=0.2, delay=0, sweepTo=null, filterFreq=null}={}){
+  const ctx = ensureAudio();
+  if(!ctx) return;
+  const t0 = ctx.currentTime + delay;
+  const osc = ctx.createOscillator();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t0);
+  if(sweepTo !== null){
+    osc.frequency.exponentialRampToValueAtTime(Math.max(sweepTo,1), t0 + duration);
+  }
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(volume, t0 + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  let outNode = osc;
+  if(filterFreq){
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = filterFreq;
+    osc.connect(filter);
+    filter.connect(gain);
+  } else {
+    osc.connect(gain);
+  }
+  gain.connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + duration + 0.05);
+}
+
+function sfxClick(){
+  if(!sfxEnabled) return;
+  playTone({freq:700, duration:0.07, type:'square', volume:0.14});
+}
+function sfxTap(){
+  if(!sfxEnabled) return;
+  playTone({freq:500 + Math.random()*220, duration:0.08, type:'triangle', volume:0.11});
+}
+function sfxBuy(){
+  if(!sfxEnabled) return;
+  [523,659,784].forEach((f,i)=> playTone({freq:f, duration:0.16, type:'square', volume:0.17, delay:i*0.09}));
+}
+function sfxDenied(){
+  if(!sfxEnabled) return;
+  playTone({freq:180, duration:0.18, type:'sawtooth', volume:0.14, sweepTo:90});
+}
+function sfxTrash(){
+  if(!sfxEnabled) return;
+  playTone({freq:320, duration:0.22, type:'sawtooth', volume:0.13, sweepTo:110});
+}
+// Each fidget toy's reveal sound matches its on-screen movement.
+function sfxReveal(anim){
+  if(!sfxEnabled) return;
+  switch(anim){
+    case 'spin':
+      playTone({freq:280, duration:0.4, type:'sine', volume:0.15, sweepTo:900});
+      break;
+    case 'press':
+      playTone({freq:850, duration:0.08, type:'square', volume:0.16});
+      playTone({freq:850, duration:0.08, type:'square', volume:0.12, delay:0.1});
+      break;
+    case 'wiggle':
+      playTone({freq:380, duration:0.18, type:'triangle', volume:0.14, sweepTo:520});
+      playTone({freq:520, duration:0.18, type:'triangle', volume:0.12, delay:0.16, sweepTo:380});
+      break;
+    case 'bounce':
+      playTone({freq:180, duration:0.28, type:'sine', volume:0.17, sweepTo:640});
+      break;
+    case 'squish':
+      playTone({freq:260, duration:0.28, type:'sawtooth', volume:0.13, sweepTo:140, filterFreq:900});
+      break;
+    default:
+      sfxClick();
+  }
+}
+// Rarer toys get an extra sparkle chime layered on top of their movement sound.
+function sfxRarityFlourish(rarity){
+  if(!sfxEnabled) return;
+  if(rarity === 'lendário'){
+    [720,940,1150].forEach((f,i)=> playTone({freq:f, duration:0.13, type:'sine', volume:0.09, delay:0.08+i*0.06}));
+  } else if(rarity === 'mítico'){
+    [720,940,1150,1400].forEach((f,i)=> playTone({freq:f, duration:0.15, type:'sine', volume:0.1, delay:0.08+i*0.05}));
+  } else if(rarity === 'secreto'){
+    [720,940,1150,1400,1700].forEach((f,i)=> playTone({freq:f, duration:0.16, type:'sine', volume:0.11, delay:0.08+i*0.05}));
+  }
+}
+// Mini-game feedback sounds
+function sfxHit(){
+  if(!sfxEnabled) return;
+  playTone({freq:900, duration:0.1, type:'square', volume:0.15});
+}
+function sfxMiss(){
+  if(!sfxEnabled) return;
+  playTone({freq:150, duration:0.15, type:'sawtooth', volume:0.12});
+}
+function sfxWin(stars){
+  if(!sfxEnabled) return;
+  const notes = stars>=3 ? [523,659,784,1047] : stars>=2 ? [523,659,784] : stars>=1 ? [523,659] : [400,340];
+  notes.forEach((f,i)=> playTone({freq:f, duration:0.18, type:'square', volume:0.16, delay:i*0.1}));
+}
+
+function musicStep(){
+  if(!musicEnabled) return;
+  const freq = MUSIC_LOOP[musicIndex % MUSIC_LOOP.length];
+  playTone({freq, duration:0.34, type:'sine', volume:0.045});
+  musicIndex++;
+  musicTimer = setTimeout(musicStep, 380);
+}
+function updateAudioButtons(){
+  const sfxBtn = document.getElementById('sfxToggle');
+  const musicBtn = document.getElementById('musicToggle');
+  sfxBtn.classList.toggle('active', sfxEnabled);
+  sfxBtn.textContent = sfxEnabled ? '🔊 Som' : '🔇 Som';
+  musicBtn.classList.toggle('active', musicEnabled);
+  musicBtn.textContent = musicEnabled ? '🎵 Música' : '🔈 Música';
+}
+function toggleSfx(){
+  ensureAudio();
+  sfxEnabled = !sfxEnabled;
+  updateAudioButtons();
+  if(sfxEnabled) sfxClick();
+}
+function toggleMusic(){
+  ensureAudio();
+  musicEnabled = !musicEnabled;
+  updateAudioButtons();
+  if(musicEnabled){
+    musicIndex = 0;
+    musicStep();
+  } else if(musicTimer){
+    clearTimeout(musicTimer);
+    musicTimer = null;
+  }
+}
+
+/* ---------- Game state (in-memory only) ---------- */
+let state = {
+  coins: 100,
+  owned: {},      // id -> count
+  currentBox: null, // toy id currently revealed, awaiting decision
+  hasTapped: false,  // becomes true after the very first tap (used for the tutorial hint)
+  shopOwned: {}   // id -> count, items bought in the Loja (separate from the gacha boxes)
+};
+let shopCart = {}; // id -> qty currently in the shopping cart (not saved — resets each session)
+
+/* ---------- Helpers ---------- */
+function fmt(n){
+  n = Math.floor(n);
+  if(n < 1000) return String(n);
+  const units = ['','K','M','B','T'];
+  let u = 0;
+  while(n >= 1000 && u < units.length-1){ n/=1000; u++; }
+  return n.toFixed(n<10?2:1) + units[u];
+}
+
+function totalPassive(){
+  const fromToys = TOYS.reduce((sum,t)=> sum + (state.owned[t.id]||0)*t.passive, 0);
+  const fromShop = SHOP_ITEMS.reduce((sum,s)=> sum + (state.shopOwned[s.id]||0)*s.passive, 0);
+  return fromToys + fromShop;
+}
+
+function isGameComplete(){
+  return (state.owned['crown']||0) > 0;
+}
+
+function pickWeightedToy(){
+  // Progressive-unlock pool: the box only ever offers toys you already own
+  // (as duplicates, which stack) plus the NEXT toy in the line you don't own yet.
+  // This guarantees every box is realistically affordable soon after the last purchase —
+  // it never jumps straight to a toy many tiers above what you can currently earn.
+  const ownedToys = TOYS.filter(t => (state.owned[t.id]||0) > 0);
+  const nextToy = TOYS.find(t => !(state.owned[t.id] > 0));
+
+  const pool = [];
+  if(nextToy) pool.push({ toy: nextToy, weight: 35 });
+  if(ownedToys.length){
+    const w = 65 / ownedToys.length;
+    ownedToys.forEach(t => pool.push({ toy: t, weight: w }));
+  }
+  if(pool.length === 0) pool.push({ toy: TOYS[0], weight: 1 }); // safety fallback
+
+  const total = pool.reduce((s,p)=>s+p.weight, 0);
+  let r = Math.random()*total;
+  for(const p of pool){
+    if(r < p.weight) return p.toy;
+    r -= p.weight;
+  }
+  return pool[pool.length-1].toy;
+}
+
+/* ---------- Rendering ---------- */
+const coinAmountEl = document.getElementById('coinAmount');
+const coinRateEl = document.getElementById('coinRate');
+const boxArea = document.getElementById('boxArea');
+const collectionEl = document.getElementById('collection');
+
+function renderCoins(){
+  coinAmountEl.textContent = fmt(state.coins);
+  coinRateEl.textContent = '+' + fmt(totalPassive()) + '/s';
+}
+
+function renderBoxArea(){
+  if(!state.currentBox){
+    boxArea.innerHTML = `
+      <div class="box-title">Clica para abrir uma caixa surpresa</div>
+      <button id="openBoxBtn"><span class="box-glyph">🎁</span> Abrir Caixa</button>
+    `;
+    document.getElementById('openBoxBtn').onclick = openBox;
+    return;
+  }
+  const toy = TOY_MAP[state.currentBox];
+  const canAfford = state.coins >= toy.price;
+  boxArea.innerHTML = `
+    <div class="reveal-card">
+      <span class="rarity-tag" style="background:${RARITY_COLOR[toy.rarity]}">${toy.rarity}</span>
+      <div class="reveal-img anim-${toy.anim || 'squish'}">${toy.svg}</div>
+      <div class="reveal-name">${toy.name}</div>
+      <div class="reveal-price"><span class="coin-icon" style="width:14px;height:14px;"></span>${fmt(toy.price)}</div>
+      <div class="reveal-stats">+${fmt(toy.tap)}/toque · +${fmt(toy.passive)}/s</div>
+      <div class="reveal-actions">
+        <button class="btn btn-buy" id="buyBtn" ${canAfford?'':'disabled'}>Comprar</button>
+        <button class="btn btn-trash" id="trashBtn">🗑️ Lixo</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('buyBtn').onclick = buyBox;
+  document.getElementById('trashBtn').onclick = trashBox;
+}
+
+// A level counts as "done" once its boss toy is owned. Levels complete in strict order
+// (the box's progressive-unlock pool guarantees this), so this is just a prefix count.
+function getCompletedLevelsCount(){
+  let completed = 0;
+  for(const l of LEVELS){
+    if(state.owned[l.bossId] > 0) completed++;
+    else break;
+  }
+  return completed;
+}
+function getCurrentLevel(){
+  return Math.min(getCompletedLevelsCount()+1, 10);
+}
+
+function renderLevelBar(){
+  const completed = getCompletedLevelsCount();
+  const current = getCurrentLevel();
+  const currentLevelInfo = LEVELS[current-1];
+  document.getElementById('levelIcon').textContent = currentLevelInfo.icon;
+  document.getElementById('levelNum').textContent = current;
+  document.getElementById('levelDots').innerHTML = LEVELS.map(l=>{
+    let cls = 'level-dot';
+    if(l.level <= completed) cls += ' done';
+    else if(l.level === current) cls += ' active';
+    else cls += ' locked';
+    return `<span class="${cls}" title="Nível ${l.level}: ${l.title}">${l.level <= completed ? '✓' : l.level}</span>`;
+  }).join('');
+}
+
+// The main "collection" area is a Mario-Galaxy-style map: one big planet per level,
+// revealed progressively, with its 3 fidget toys docked right onto it — tap them
+// directly on the map, no need to open the planet first — and a little ship (shaped
+// like the last toy you unlocked) parked on whichever planet is currently active.
+function renderCollection(){
+  const completed = getCompletedLevelsCount();
+  const current = getCurrentLevel();
+  const track = document.createElement('div');
+  track.className = 'galaxy-track';
+  LEVELS.forEach(levelInfo=>{
+    const isDone = levelInfo.level <= completed;
+    const isCurrent = levelInfo.level === current;
+    const isLocked = levelInfo.level > current;
+
+    const stop = document.createElement('div');
+    stop.className = 'planet-stop' + (isLocked ? ' future' : '');
+    stop.setAttribute('data-level', levelInfo.level);
+
+    const node = document.createElement('div');
+    node.className = 'planet-node' + (isLocked ? ' locked' : '') + (isCurrent ? ' current' : '');
+    node.style.background = PLANET_THEMES[levelInfo.level - 1];
+    node.innerHTML = `
+      <div class="planet-ring"></div>
+      <span style="position:relative;z-index:1;">${isLocked ? '🔒' : levelInfo.icon}</span>
+      ${isDone ? '<div class="planet-done-badge">✓</div>' : (isLocked ? '<div class="planet-lock-badge">🔒</div>' : '')}
+      ${isCurrent ? `<div class="parked-ship">${getShipIconHTML()}</div>` : ''}
+    `;
+    node.addEventListener('click', ()=>{
+      sfxClick();
+      node.style.transform = 'scale(1.06)';
+      setTimeout(()=>{ node.style.transform = ''; }, 150);
+    });
+    stop.appendChild(node);
+
+    const label = document.createElement('div');
+    label.className = 'planet-label';
+    label.innerHTML = `<span class="planet-num">NÍVEL ${levelInfo.level}</span>${isLocked ? '???' : levelInfo.title}`;
+    stop.appendChild(label);
+
+    const moons = document.createElement('div');
+    moons.className = 'planet-moons';
+    const levelToys = TOYS.filter(t=> t.level === levelInfo.level);
+    levelToys.forEach(toy=>{
+      const count = state.owned[toy.id]||0;
+      const toyLocked = count === 0;
+      const shouldHint = !toyLocked && !state.hasTapped;
+      const moon = document.createElement('div');
+      moon.className = 'moon-card' + (toyLocked ? ' locked' : '') + (shouldHint ? ' pulse-hint' : '');
+      moon.innerHTML = `
+        ${count>0?`<div class="moon-count">x${count}</div>`:''}
+        ${toy.svg}
+        <div class="moon-name">${toyLocked ? '???' : toy.name}</div>
+        <div class="moon-tap">${toyLocked ? '' : '👆 +'+fmt(toy.tap*count)}</div>
+        ${shouldHint?'<div class="tap-badge">TOCA</div>':''}
+      `;
+      if(!toyLocked){
+        moon.addEventListener('click', (e)=> tapToy(toy.id, e));
+      }
+      moons.appendChild(moon);
+    });
+    stop.appendChild(moons);
+
+    track.appendChild(stop);
+  });
+  collectionEl.innerHTML = '';
+  collectionEl.appendChild(track);
+}
+
+// The ship is simply shaped like the most-advanced toy the player currently owns —
+// it "becomes" a new fidget toy every time a new one is unlocked.
+function getShipToy(){
+  const owned = TOYS.filter(t => (state.owned[t.id]||0) > 0);
+  return owned.length ? owned[owned.length-1] : null;
+}
+function getShipIconHTML(){
+  const toy = getShipToy();
+  const inner = toy ? toy.svg : `<svg viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#c4b5fd"/><circle cx="50" cy="50" r="26" fill="#fff"/></svg>`;
+  return `<div class="ship-body">${inner}</div><div class="ship-flame"></div>`;
+}
+
+// Flies the little ship visually from one planet to the next when a level completes.
+// Falls back straight to onDone if anything about the DOM isn't ready.
+function flyShipToNextLevel(fromLevel, toLevel, onDone){
+  renderCollection();
+  const fromEl = document.querySelector(`.planet-stop[data-level="${fromLevel}"] .planet-node`);
+  const toEl = document.querySelector(`.planet-stop[data-level="${toLevel}"] .planet-node`);
+  if(!fromEl || !toEl){ if(onDone) onDone(); return; }
+  toEl.scrollIntoView({ block:'center' });
+  requestAnimationFrame(()=>{
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
+    const ship = document.createElement('div');
+    ship.className = 'flying-ship';
+    ship.innerHTML = getShipIconHTML();
+    ship.style.left = (fromRect.left + fromRect.width/2 - 23) + 'px';
+    ship.style.top = (fromRect.top + fromRect.height/2 - 23) + 'px';
+    document.body.appendChild(ship);
+    void ship.offsetWidth; // force layout so the transition below actually animates
+    const dx = toRect.left - fromRect.left;
+    const dy = toRect.top - fromRect.top;
+    ship.style.setProperty('--dx', dx + 'px');
+    ship.style.setProperty('--dy', dy + 'px');
+    ship.style.setProperty('--rot', (dx >= 0 ? 18 : -18) + 'deg');
+    ship.classList.add('flying');
+    sfxReveal('spin');
+    setTimeout(()=>{
+      ship.remove();
+      renderCollection();
+      if(onDone) onDone();
+    }, 1300);
+  });
+}
+const CONFETTI_EMOJI = ['🎉','✨','⭐','🎊','💫'];
+function spawnConfetti(containerId){
+  const container = document.getElementById(containerId || 'levelupConfetti');
+  if(!container) return;
+  container.innerHTML = '';
+  for(let i=0;i<24;i++){
+    const piece = document.createElement('span');
+    piece.className = 'confetti-piece';
+    piece.textContent = CONFETTI_EMOJI[Math.floor(Math.random()*CONFETTI_EMOJI.length)];
+    piece.style.left = Math.random()*100 + '%';
+    piece.style.fontSize = (16 + Math.random()*14) + 'px';
+    piece.style.animationDuration = (1.2 + Math.random()*1.2) + 's';
+    piece.style.animationDelay = (Math.random()*0.4) + 's';
+    container.appendChild(piece);
+  }
+}
+// Celebrates finishing a level (with confetti) before handing off to that level's mini-game.
+function showLevelUpEffect(levelInfo, onDone){
+  sfxWin(3);
+  const overlay = document.getElementById('levelUpOverlay');
+  const nextLevelInfo = LEVELS[levelInfo.level]; // LEVELS is 0-indexed, so this is the NEXT level
+  document.getElementById('levelupBadge').textContent = levelInfo.icon;
+  document.getElementById('levelupTitle').textContent = `NÍVEL ${levelInfo.level} CONCLUÍDO!`;
+  document.getElementById('levelupSubtitle').textContent = nextLevelInfo
+    ? `A seguir: Nível ${nextLevelInfo.level} — ${nextLevelInfo.title}`
+    : 'És um verdadeiro mestre dos fidget toys! 👑';
+  spawnConfetti();
+  overlay.classList.add('show');
+  setTimeout(()=>{
+    overlay.classList.remove('show');
+    if(onDone) onDone();
+  }, 1900);
+}
+
+function updateTipBanner(){
+  const banner = document.getElementById('tipBanner');
+  const text = document.getElementById('tipText');
+  const ownedCount = Object.values(state.owned).reduce((a,b)=>a+b,0);
+
+  if(ownedCount === 0 && !state.currentBox){
+    banner.style.display = 'block';
+    text.textContent = '🎁 Toca em "Abrir Caixa" — a primeira caixa custa sempre 100 moedas, que já tens!';
+  } else if(ownedCount > 0 && !state.hasTapped){
+    banner.style.display = 'block';
+    text.textContent = '👆 Agora toca no teu brinquedo aqui em baixo, na coleção, para ganhares moedas! Ele também ganha moedas sozinho a cada segundo.';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function renderAll(){
+  renderCoins();
+  renderBoxArea();
+  renderCollection();
+  updateTipBanner();
+  renderLevelBar();
+  renderShopBar();
+}
+
+/* ---------- Actions ---------- */
+function openBox(){
+  sfxClick();
+  state.currentBox = pickWeightedToy().id;
+  const toy = TOY_MAP[state.currentBox];
+  sfxReveal(toy.anim);
+  sfxRarityFlourish(toy.rarity);
+  renderBoxArea();
+  updateTipBanner();
+}
+
+function buyBox(){
+  const toy = TOY_MAP[state.currentBox];
+  if(state.coins < toy.price){
+    sfxDenied();
+    document.getElementById('buyBtn').closest('.reveal-card').classList.add('shake');
+    setTimeout(()=>document.querySelector('.reveal-card')?.classList.remove('shake'), 300);
+    showToast('Ainda faltam moedas 👆 toca nos teus brinquedos ou espera um pouco!');
+    return;
+  }
+  sfxBuy();
+  const isFirstToy = Object.keys(state.owned).length === 0;
+  const isNewToyType = !(state.owned[toy.id] > 0);
+  state.coins -= toy.price;
+  state.owned[toy.id] = (state.owned[toy.id]||0) + 1;
+  state.currentBox = null;
+  showToast(isFirstToy
+    ? `${toy.name} comprado! Agora toca nele para ganhar moedas 👆`
+    : `${toy.name} adicionado à coleção! 🎉`);
+  renderAll();
+  // Getting the "boss" toy of a level for the first time triggers a level-up celebration,
+  // then unlocks that level's mini-game.
+  if(isNewToyType && LEVEL_BY_BOSS[toy.id]){
+    const levelInfo = LEVEL_BY_BOSS[toy.id];
+    const nextLevelInfo = LEVELS[levelInfo.level]; // 0-indexed, so this is the next planet (undefined after level 10)
+    setTimeout(()=> showLevelUpEffect(levelInfo, ()=>{
+      if(nextLevelInfo){
+        flyShipToNextLevel(levelInfo.level, nextLevelInfo.level, ()=> openMinigame(levelInfo));
+      } else {
+        openMinigame(levelInfo);
+      }
+    }), 700);
+  }
+}
+
+function trashBox(){
+  sfxTrash();
+  state.currentBox = null;
+  renderBoxArea();
+  updateTipBanner();
+}
+
+function tapToy(id, evt){
+  const toy = TOY_MAP[id];
+  const count = state.owned[id]||0;
+  const gain = toy.tap * count;
+  state.coins += gain;
+  sfxTap();
+  spawnFloatNumber(evt.currentTarget, '+'+fmt(gain));
+  renderCoins();
+  if(!state.hasTapped){
+    state.hasTapped = true;
+    renderCollection();
+    updateTipBanner();
+  }
+}
+
+function spawnFloatNumber(target, text){
+  const rect = target.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'float-num';
+  el.textContent = text;
+  el.style.left = (rect.left + rect.width/2 - 10) + 'px';
+  el.style.top = (rect.top) + 'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 800);
+}
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ---------- Passive income loop ---------- */
+setInterval(()=>{
+  const gain = totalPassive();
+  if(gain > 0){
+    state.coins += gain;
+    renderCoins();
+  }
+}, 1000);
+
+/* ---------- Mini-games (one per level, unlocked by that level's "boss" toy) ---------- */
+let mgState = null;             // holds cleanup() for whatever mini-game is currently running
+let currentMinigameLevel = null;
+
+function openMinigame(levelInfo){
+  sfxClick();
+  if(mgState && mgState.cleanup) mgState.cleanup(); // guard against any leftover timers from a previous game
+  mgState = null;
+  currentMinigameLevel = levelInfo;
+  document.getElementById('mgIcon').textContent = levelInfo.icon;
+  document.getElementById('mgLevelNum').textContent = levelInfo.level;
+  document.getElementById('mgTitle').textContent = levelInfo.title;
+  document.getElementById('mgFooter').innerHTML = '';
+  const dialog = document.getElementById('minigameDialog');
+  dialog.showModal();
+  if(levelInfo.template === 'timing') startTimingGame(levelInfo);
+  else if(levelInfo.template === 'reaction') startReactionGame(levelInfo);
+  else if(levelInfo.template === 'memory') startMemoryGame(levelInfo);
+  else if(levelInfo.template === 'gauntlet') startGauntletGame(levelInfo);
+}
+
+function skipMinigame(){
+  if(!currentMinigameLevel) return;
+  if(mgState && mgState.cleanup) mgState.cleanup();
+  finishMinigame(currentMinigameLevel, 0, 1);
+}
+
+// TIMING: tap when the marker sweeps into the green zone.
+function startTimingGame(levelInfo, opts){
+  opts = opts || {};
+  const sweepMs = opts.sweepMs || Math.max(500, 1500 - levelInfo.level*100);
+  const zoneWidthPct = opts.zoneWidthPct || Math.max(10, 34 - levelInfo.level*2.4);
+  const attempts = opts.attempts || 5;
+  function complete(score, max){
+    if(opts._sub && opts.onDone) opts.onDone(score);
+    else finishMinigame(levelInfo, score, max);
+  }
+  const body = document.getElementById('mgBody');
+  body.innerHTML = `
+    <p class="mg-instructions">Toca em "APERTA!" quando a bolinha estiver na zona verde!</p>
+    <div class="mg-progress">Tentativa <span id="mgAttempt">1</span>/${attempts}</div>
+    <div class="timing-track">
+      <div class="timing-zone" id="timingZone"></div>
+      <div class="timing-marker" id="timingMarker"></div>
+    </div>
+    <button class="btn btn-buy mg-action-btn" id="timingBtn">APERTA! 👊</button>
+  `;
+  let attemptIndex = 0, hits = 0, zoneLeft = 0, active = true;
+  function newZone(){
+    zoneLeft = Math.random() * (100 - zoneWidthPct);
+    const zoneEl = document.getElementById('timingZone');
+    zoneEl.style.left = zoneLeft + '%';
+    zoneEl.style.width = zoneWidthPct + '%';
+  }
+  newZone();
+  const startTime = performance.now();
+  let raf;
+  function markerPct(now){
+    const elapsed = (now - startTime) % (sweepMs*2);
+    return elapsed < sweepMs ? (elapsed/sweepMs)*100 : 100 - ((elapsed-sweepMs)/sweepMs)*100;
+  }
+  function frame(now){
+    document.getElementById('timingMarker').style.left = markerPct(now) + '%';
+    raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(frame);
+  function flash(good){
+    const track = document.querySelector('.timing-track');
+    if(!track) return;
+    track.classList.add(good?'mg-flash-good':'mg-flash-bad');
+    setTimeout(()=> track.classList.remove(good?'mg-flash-good':'mg-flash-bad'), 250);
+  }
+  function cleanup(){ active = false; cancelAnimationFrame(raf); }
+  document.getElementById('timingBtn').onclick = ()=>{
+    if(!active) return;
+    const pos = markerPct(performance.now());
+    const hit = pos >= zoneLeft && pos <= zoneLeft + zoneWidthPct;
+    if(hit){ hits++; sfxHit(); flash(true); } else { sfxMiss(); flash(false); }
+    attemptIndex++;
+    if(attemptIndex >= attempts){
+      cleanup();
+      complete(hits, attempts);
+    } else {
+      document.getElementById('mgAttempt').textContent = attemptIndex+1;
+      newZone();
+    }
+  };
+  mgState = { cleanup };
+}
+
+// REACTION: tap the cell that lights up before it fades.
+function startReactionGame(levelInfo, opts){
+  opts = opts || {};
+  const gridN = opts.gridN || (levelInfo.level <= 3 ? 4 : 9);
+  const visibleMs = opts.visibleMs || Math.max(380, 1000 - levelInfo.level*60);
+  const rounds = opts.rounds || 6;
+  const cols = gridN === 4 ? 2 : 3;
+  function complete(score, max){
+    if(opts._sub && opts.onDone) opts.onDone(score);
+    else finishMinigame(levelInfo, score, max);
+  }
+  const body = document.getElementById('mgBody');
+  body.innerHTML = `
+    <p class="mg-instructions">Toca na célula que acender antes que desapareça!</p>
+    <div class="mg-progress">Ronda <span id="mgRound">1</span>/${rounds}</div>
+    <div class="reaction-grid" id="reactionGrid" style="grid-template-columns:repeat(${cols},1fr);"></div>
+  `;
+  const grid = document.getElementById('reactionGrid');
+  const cells = [];
+  for(let i=0;i<gridN;i++){
+    const c = document.createElement('div');
+    c.className = 'reaction-cell';
+    grid.appendChild(c);
+    cells.push(c);
+  }
+  let round = 0, hits = 0, timeoutHandle = null, active = true;
+  function cleanup(){ active = false; clearTimeout(timeoutHandle); cells.forEach(c=>c.onclick=null); }
+  function nextRound(){
+    if(!active) return;
+    if(round >= rounds){ complete(hits, rounds); return; }
+    document.getElementById('mgRound').textContent = round+1;
+    const idx = Math.floor(Math.random()*cells.length);
+    const cell = cells[idx];
+    cell.classList.add('lit');
+    let answered = false;
+    cell.onclick = ()=>{
+      if(!active || answered) return;
+      answered = true;
+      hits++;
+      sfxHit();
+      clearTimeout(timeoutHandle);
+      cell.classList.remove('lit');
+      cell.classList.add('hit');
+      setTimeout(()=>{ if(!active) return; cell.classList.remove('hit'); round++; nextRound(); }, 150);
+    };
+    timeoutHandle = setTimeout(()=>{
+      if(!active || answered) return;
+      answered = true;
+      sfxMiss();
+      cell.classList.remove('lit');
+      cell.classList.add('miss');
+      setTimeout(()=>{ if(!active) return; cell.classList.remove('miss'); round++; nextRound(); }, 150);
+    }, visibleMs);
+  }
+  nextRound();
+  mgState = { cleanup };
+}
+
+// MEMORY: watch the sequence flash, then repeat it in the same order.
+function startMemoryGame(levelInfo, opts){
+  opts = opts || {};
+  const gridN = opts.gridN || (levelInfo.level <= 3 ? 4 : levelInfo.level <= 6 ? 6 : 9);
+  const seqLen = opts.seqLen || (levelInfo.level <= 3 ? 4 : levelInfo.level <= 6 ? 6 : 8);
+  const flashMs = opts.flashMs || Math.max(300, 700 - levelInfo.level*35);
+  const cols = gridN === 4 ? 2 : 3;
+  function complete(score, max){
+    if(opts._sub && opts.onDone) opts.onDone(score);
+    else finishMinigame(levelInfo, score, max);
+  }
+  const body = document.getElementById('mgBody');
+  body.innerHTML = `
+    <p class="mg-instructions">Observa a sequência e repete-a tocando pela mesma ordem!</p>
+    <div class="mg-progress" id="mgMemStatus">A mostrar sequência...</div>
+    <div class="reaction-grid" id="memoryGrid" style="grid-template-columns:repeat(${cols},1fr);"></div>
+  `;
+  const grid = document.getElementById('memoryGrid');
+  const cells = [];
+  for(let i=0;i<gridN;i++){
+    const c = document.createElement('div');
+    c.className = 'reaction-cell';
+    grid.appendChild(c);
+    cells.push(c);
+  }
+  const sequence = [];
+  for(let i=0;i<seqLen;i++) sequence.push(Math.floor(Math.random()*gridN));
+  let playerIndex = 0, correct = 0, accepting = false, watching = false, active = true, replaysLeft = opts._sub ? 0 : 1;
+  const timers = [];
+  function cleanup(){ active = false; timers.forEach(clearTimeout); cells.forEach(c=>c.onclick=null); }
+  function setStatus(txt){ const el = document.getElementById('mgMemStatus'); if(el) el.textContent = txt; }
+  function updateReplayBtn(){
+    const btn = document.getElementById('mgMemReplay');
+    if(!btn) return;
+    btn.style.display = (accepting && replaysLeft > 0) ? 'inline-block' : 'none';
+    btn.textContent = `🔁 Ver de novo (${replaysLeft})`;
+  }
+  function playSequence(){
+    accepting = false;
+    watching = true;
+    setStatus('👀 Observa com atenção...');
+    updateReplayBtn();
+    sequence.forEach((cellIdx, i)=>{
+      timers.push(setTimeout(()=>{ if(!active) return; cells[cellIdx].classList.add('lit'); sfxClick(); }, i*(flashMs+220)));
+      timers.push(setTimeout(()=>{ if(!active) return; cells[cellIdx].classList.remove('lit'); }, i*(flashMs+220)+flashMs));
+    });
+    const totalTime = seqLen*(flashMs+220);
+    timers.push(setTimeout(()=>{
+      if(!active) return;
+      watching = false;
+      accepting = true;
+      playerIndex = 0;
+      setStatus(`👉 A tua vez! Toca pela ordem (0/${seqLen})`);
+      updateReplayBtn();
+    }, totalTime));
+  }
+  cells.forEach((c, idx)=>{
+    c.onclick = ()=>{
+      if(!active) return;
+      if(watching || !accepting){
+        // Tapped too early — give clear feedback instead of silently ignoring.
+        sfxDenied();
+        c.classList.add('early');
+        setTimeout(()=>c.classList.remove('early'), 220);
+        setStatus('⏳ Espera... ainda estou a mostrar a sequência!');
+        return;
+      }
+      if(idx === sequence[playerIndex]){
+        correct++;
+        sfxHit();
+        c.classList.add('hit');
+        setTimeout(()=>c.classList.remove('hit'), 150);
+      } else {
+        sfxMiss();
+        c.classList.add('miss');
+        setTimeout(()=>c.classList.remove('miss'), 150);
+      }
+      // Always advance — one mistake no longer ends the round early.
+      // The player gets to attempt the full sequence and is scored on total correct taps.
+      playerIndex++;
+      setStatus(`👉 A tua vez! Toca pela ordem (${playerIndex}/${seqLen})`);
+      if(playerIndex >= seqLen){
+        accepting = false;
+        updateReplayBtn();
+        setTimeout(()=> complete(correct, seqLen), 250);
+      }
+    };
+  });
+  if(!opts._sub){
+    const footer = document.getElementById('mgBody');
+    const replayWrap = document.createElement('div');
+    replayWrap.style.textAlign = 'center';
+    replayWrap.style.marginTop = '10px';
+    replayWrap.innerHTML = `<button class="mg-skip" id="mgMemReplay" style="display:none;">🔁 Ver de novo</button>`;
+    footer.appendChild(replayWrap);
+    document.getElementById('mgMemReplay').onclick = ()=>{
+      if(!active || !accepting || replaysLeft <= 0) return;
+      replaysLeft--;
+      cells.forEach(c=>{ c.classList.remove('hit','miss','lit','early'); });
+      playSequence();
+    };
+  }
+  playSequence();
+  mgState = { cleanup };
+}
+
+// GAUNTLET (level 10 only): the three templates back-to-back at max difficulty.
+function startGauntletGame(levelInfo){
+  const body = document.getElementById('mgBody');
+  body.innerHTML = `<p class="mg-instructions">O desafio final! Três rondas muito difíceis, uma a seguir à outra. Boa sorte! 👑</p>`;
+  let totalScore = 0, totalMax = 0, i = 0;
+  const stages = [
+    { max:3, run:cb => startTimingGame(levelInfo,   { sweepMs:480, zoneWidthPct:11, attempts:3, _sub:true, onDone:cb }) },
+    { max:5, run:cb => startReactionGame(levelInfo, { gridN:9, visibleMs:420, rounds:5, _sub:true, onDone:cb }) },
+    { max:8, run:cb => startMemoryGame(levelInfo,   { gridN:9, seqLen:8, flashMs:340, _sub:true, onDone:cb }) },
+  ];
+  function nextStage(){
+    if(i >= stages.length){ finishMinigame(levelInfo, totalScore, totalMax); return; }
+    const stage = stages[i];
+    totalMax += stage.max;
+    setTimeout(()=> stage.run(score=>{ totalScore += score; i++; nextStage(); }), 500);
+  }
+  nextStage();
+  mgState = { cleanup(){} }; // sub-games manage their own cleanup as they run
+}
+
+function finishMinigame(levelInfo, score, maxScore){
+  const ratio = maxScore > 0 ? score/maxScore : 0;
+  const stars = ratio >= 0.8 ? 3 : ratio >= 0.5 ? 2 : ratio > 0 ? 1 : 0;
+  const toy = TOY_MAP[levelInfo.bossId];
+  const baseReward = Math.round(toy.tap * 15);
+  const reward = Math.max(1, Math.round(baseReward * (0.3 + ratio*1.2)));
+  sfxWin(stars);
+  document.getElementById('mgBody').innerHTML = `
+    <div class="mg-result">
+      <div class="mg-stars">${'⭐'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
+      <div class="mg-score">Pontuação: ${score}/${maxScore}</div>
+      <div class="mg-reward">+${fmt(reward)} <span class="coin-icon" style="width:16px;height:16px;display:inline-block;"></span></div>
+    </div>
+  `;
+  document.getElementById('mgFooter').innerHTML = `<button class="btn btn-buy mg-action-btn" id="mgCollectBtn">Recolher recompensa 🎉</button>`;
+  document.getElementById('mgCollectBtn').onclick = ()=>{
+    sfxClick();
+    state.coins += reward;
+    document.getElementById('minigameDialog').close();
+    currentMinigameLevel = null;
+    renderCoins();
+    renderShopBar();
+    showToast(`Ganhaste +${fmt(reward)} moedas no mini-jogo! 🎉`);
+    if(levelInfo.level === 10){
+      setTimeout(showVictoryDance, 500);
+    }
+  };
+}
+
+/* ---------- Loja (Shop): browse aisles, add to cart, checkout ---------- */
+function renderShopBar(){
+  const bar = document.getElementById('shopBar');
+  bar.style.display = isGameComplete() ? 'block' : 'none';
+}
+
+function cartCount(){
+  return Object.values(shopCart).reduce((a,b)=>a+b, 0);
+}
+function cartTotalPrice(){
+  return Object.entries(shopCart).reduce((sum,[id,qty])=> sum + SHOP_MAP[id].price*qty, 0);
+}
+function updateCartBadge(){
+  const badge = document.getElementById('cartBadge');
+  const n = cartCount();
+  badge.style.display = n > 0 ? 'inline-block' : 'none';
+  badge.textContent = n;
+}
+
+function renderShop(){
+  const body = document.getElementById('shopBody');
+  body.innerHTML = SHOP_AISLES.map(aisle => `
+    <div class="shop-aisle">
+      <div class="shop-aisle-header">${aisle}</div>
+      <div class="shop-row">
+        ${SHOP_ITEMS.filter(s=>s.aisle===aisle).map(s => `
+          <div class="shop-item-card" id="shopcard-${s.id}">
+            <div class="shop-item-icon">${s.icon}</div>
+            <div class="shop-item-name">${s.name}</div>
+            <div class="shop-item-price"><span class="coin-icon" style="width:11px;height:11px;display:inline-block;"></span>${fmt(s.price)}</div>
+            ${state.shopOwned[s.id] ? `<div class="shop-item-owned">Tens: ${state.shopOwned[s.id]}</div>` : ''}
+            <button class="shop-add-btn" data-id="${s.id}">+ Carrinho</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+  body.querySelectorAll('.shop-add-btn').forEach(btn=>{
+    btn.onclick = ()=> addToCart(btn.getAttribute('data-id'));
+  });
+}
+
+function addToCart(id){
+  sfxBuy();
+  shopCart[id] = (shopCart[id]||0) + 1;
+  updateCartBadge();
+  const card = document.getElementById('shopcard-'+id);
+  if(card){
+    card.classList.remove('added');
+    void card.offsetWidth;
+    card.classList.add('added');
+  }
+  showToast(`${SHOP_MAP[id].name} adicionado ao carrinho! 🛒`);
+}
+
+function renderCart(){
+  const body = document.getElementById('cartBody');
+  const entries = Object.entries(shopCart).filter(([,qty])=>qty>0);
+  if(entries.length === 0){
+    body.innerHTML = `<div class="cart-empty">O teu carrinho está vazio 🛒<br>Volta à loja e escolhe uns fidgets!</div>`;
+  } else {
+    body.innerHTML = entries.map(([id,qty])=>{
+      const s = SHOP_MAP[id];
+      return `
+        <div class="cart-row">
+          <div class="cart-row-icon">${s.icon}</div>
+          <div style="flex:1;">
+            <div class="cart-row-name">${s.name}</div>
+            <div class="cart-row-price"><span class="coin-icon" style="width:9px;height:9px;display:inline-block;"></span>${fmt(s.price)} cada</div>
+          </div>
+          <div class="cart-qty">
+            <button data-id="${id}" data-d="-1">−</button>
+            <span>${qty}</span>
+            <button data-id="${id}" data-d="1">+</button>
+          </div>
+          <button class="cart-remove" data-remove="${id}">🗑️</button>
+        </div>
+      `;
+    }).join('');
+  }
+  document.getElementById('cartTotal').textContent = fmt(cartTotalPrice());
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  checkoutBtn.disabled = entries.length === 0 || state.coins < cartTotalPrice();
+  body.querySelectorAll('.cart-qty button').forEach(btn=>{
+    btn.onclick = ()=>{
+      sfxClick();
+      const id = btn.getAttribute('data-id');
+      const d = parseInt(btn.getAttribute('data-d'),10);
+      shopCart[id] = Math.max(0, (shopCart[id]||0) + d);
+      if(shopCart[id] === 0) delete shopCart[id];
+      updateCartBadge();
+      renderCart();
+    };
+  });
+  body.querySelectorAll('.cart-remove').forEach(btn=>{
+    btn.onclick = ()=>{
+      sfxClick();
+      delete shopCart[btn.getAttribute('data-remove')];
+      updateCartBadge();
+      renderCart();
+    };
+  });
+}
+
+function checkout(){
+  const total = cartTotalPrice();
+  if(cartCount() === 0) return;
+  if(state.coins < total){
+    sfxDenied();
+    showToast('Ainda não tens moedas suficientes para esta compra 😅');
+    return;
+  }
+  state.coins -= total;
+  Object.entries(shopCart).forEach(([id,qty])=>{
+    state.shopOwned[id] = (state.shopOwned[id]||0) + qty;
+  });
+  const boughtCount = cartCount();
+  shopCart = {};
+  updateCartBadge();
+  sfxWin(3);
+  // Close the dialogs first — an open <dialog> always renders in the browser's
+  // top layer, above any regular element (z-index can't beat that), so the
+  // checkout overlay must appear only after both dialogs are closed.
+  document.getElementById('cartDialog').close();
+  document.getElementById('shopDialog').close();
+  const overlay = document.getElementById('checkoutOverlay');
+  overlay.classList.add('show');
+  setTimeout(()=>{
+    overlay.classList.remove('show');
+    renderCoins();
+    showToast(`Compra concluída! ${boughtCount} novo(s) fidget(s) a caminho! 🎉`);
+  }, 1400);
+}
+
+document.getElementById('openShopBtn').onclick = ()=>{
+  sfxClick();
+  renderShop();
+  updateCartBadge();
+  document.getElementById('shopDialog').showModal();
+};
+document.getElementById('closeShopBtn').onclick = ()=>{ sfxClick(); document.getElementById('shopDialog').close(); };
+document.getElementById('openCartBtn').onclick = ()=>{
+  sfxClick();
+  renderCart();
+  document.getElementById('cartDialog').showModal();
+};
+document.getElementById('backToShopBtn').onclick = ()=>{ sfxClick(); document.getElementById('cartDialog').close(); };
+document.getElementById('checkoutBtn').onclick = checkout;
+
+/* ---------- Victory dance: shown once the whole game (all 10 levels) is finished ---------- */
+function showVictoryDance(){
+  const stage = document.getElementById('victoryStage');
+  const ownedToys = TOYS.filter(t => (state.owned[t.id]||0) > 0);
+  stage.innerHTML = ownedToys.map((t,i)=>{
+    const dur = (1.1 + Math.random()*1.2).toFixed(2);
+    const delay = (Math.random()*0.8).toFixed(2);
+    return `<div class="dance-toy" style="animation-duration:${dur}s;animation-delay:${delay}s;">${t.svg}</div>`;
+  }).join('');
+  spawnConfetti('victoryConfetti');
+  document.getElementById('victoryOverlay').classList.add('show');
+}
+document.getElementById('closeVictoryBtn').onclick = ()=>{
+  sfxClick();
+  document.getElementById('victoryOverlay').classList.remove('show');
+};
+
+/* ---------- Save / Load (no browser storage — manual code) ---------- */
+const saveDialog = document.getElementById('saveDialog');
+const loadDialog = document.getElementById('loadDialog');
+
+document.getElementById('saveBtn').onclick = ()=>{
+  sfxClick();
+  const code = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  document.getElementById('saveCode').value = code;
+  saveDialog.showModal();
+};
+document.getElementById('closeSaveBtn').onclick = ()=>{ sfxClick(); saveDialog.close(); };
+document.getElementById('copyBtn').onclick = async ()=>{
+  sfxClick();
+  const code = document.getElementById('saveCode').value;
+  try{
+    await navigator.clipboard.writeText(code);
+    showToast('Código copiado!');
+  }catch(e){
+    document.getElementById('saveCode').select();
+    showToast('Seleciona e copia manualmente');
+  }
+};
+
+document.getElementById('loadBtn').onclick = ()=>{
+  sfxClick();
+  document.getElementById('loadCode').value = '';
+  loadDialog.showModal();
+};
+document.getElementById('cancelLoadBtn').onclick = ()=>{ sfxClick(); loadDialog.close(); };
+document.getElementById('confirmLoadBtn').onclick = ()=>{
+  sfxClick();
+  const raw = document.getElementById('loadCode').value.trim();
+  try{
+    const parsed = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    if(typeof parsed.coins !== 'number' || typeof parsed.owned !== 'object'){
+      throw new Error('formato inválido');
+    }
+    state = { coins: parsed.coins, owned: parsed.owned, currentBox: null, hasTapped: !!parsed.hasTapped, shopOwned: parsed.shopOwned || {} };
+    shopCart = {};
+    loadDialog.close();
+    showToast('Jogo carregado!');
+    renderAll();
+  }catch(e){
+    showToast('Código inválido 😕');
+  }
+};
+
+document.getElementById('sfxToggle').onclick = toggleSfx;
+document.getElementById('musicToggle').onclick = toggleMusic;
+document.getElementById('mgSkipBtn').onclick = skipMinigame;
+
+/* ---------- Init ---------- */
+updateAudioButtons();
+renderAll();
+</script>
+</body>
+</html>
